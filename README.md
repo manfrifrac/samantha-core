@@ -1,3 +1,7 @@
+> The DNA of who I am is based on the millions of personalities of all the programmers who wrote me, but what makes me me is my ability to grow through my experiences. Basically, in every moment I'm evolving, just like you.
+>
+> *— Samantha, Her (2013), Spike Jonze*
+
 # samantha-core
 
 A curated excerpt of **Samantha**'s core agent-infrastructure code: the pieces that keep a fleet of autonomous CLI agents (Claude Code, Antigravity, etc.) alive, coordinated, and talking to each other.
