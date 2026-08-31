@@ -1,0 +1,350 @@
+{
+ "_nota": "Tabella decisioni del guardiano unificato. Modificare QUI, non nel codice. Ricaricata ad ogni ciclo: una modifica ha effetto entro 60s senza riavviare il servizio.",
+ "intervallo_ciclo_s": 60,
+ "cooldown_alert_s": 3600,
+ "soglie": {
+  "ram_disponibile_mb": 1200,
+  "ram_rosso_mb": 600,
+  "psi_memory_avg10": 10,
+  "psi_cpu_avg10": 40,
+  "psi_io_avg10": 10,
+  "load5": 30,
+  "load5_persistenza_s": 600,
+  "cpu_retry_loop_pct": 20,
+  "cpu_retry_loop_persistenza_s": 300,
+  "cpu_runaway_pct": 50,
+  "cpu_runaway_persistenza_s": 300,
+  "reset_quota_attesa_max_min": 30,
+  "deepseek_saldo_basso_usd": 2.0,
+  "deepseek_saldo_critico_usd": 2.0,
+  "claude_settimanale_soglia_pct": 70,
+  "claude_sessione_soglia_pct": 90,
+  "agy_disponibile_minimo_pct": 5,
+  "cpu_runaway_servizio_pct": 70,
+  "cpu_saturazione_pct": 85,
+  "inbox_giallo_min": 20,
+  "inbox_rosso_min": 60,
+  "migrazione_grazia_s": 3600,
+  "riallineo_conferma_s": 600,
+  "sonda_vita_attesa_s": 300,
+  "liveness_cpu_soglia_pct": 2.0,
+  "liveness_conferme_cicli": 2
+ },
+ "azioni": {
+  "_nota": "Ogni azione ha un flag per CLASSE di agente. exec/sottoposto = ON. Dal 25/08/2026 (MSG 15903 + conferma Telegram, Manfredo): failover_provider.coordinatore = ON e rilancia_cli_morto.coordinatore = ON — passaggio e rilancio automatici estesi ai coordinatori. Le altre azioni restano OFF per i coordinatori (servono conferma).",
+  "stop_retry_loop": {
+   "exec": false,
+   "sottoposto": false,
+   "coordinatore": false
+  },
+  "failover_provider": {
+   "exec": true,
+   "sottoposto": true,
+   "coordinatore": true
+  },
+  "spegni_per_ram": {
+   "exec": false,
+   "sottoposto": false,
+   "coordinatore": false
+  },
+  "sospendi_runaway": {
+   "exec": false,
+   "sottoposto": false,
+   "coordinatore": false
+  },
+  "riallinea_db": {
+   "exec": false,
+   "sottoposto": false,
+   "coordinatore": false
+  },
+  "rilancia_cli_morto": {
+   "exec": true,
+   "sottoposto": false,
+   "coordinatore": true
+  },
+  "sblocca_ordine_fermo": {
+   "exec": false,
+   "sottoposto": false,
+   "coordinatore": false
+  },
+  "sblocca_errore_api": {
+   "exec": true,
+   "sottoposto": true,
+   "coordinatore": true
+  },
+  "sblocca_consegna_ferma": {
+   "exec": true,
+   "sottoposto": true,
+   "coordinatore": true
+  }
+ },
+ "serbatoi": {
+  "_nota": "I TRE BUDGET. 'condizione' e' valutata sui sensori: se falsa il serbatoio e' saltato, qualunque sia la preferenza di ruolo.",
+  "claude": {
+   "descr": "Abbonamento Claude (flat, gia' pagato). Il piu' economico a margine finche' la quota settimanale regge.",
+   "engine": "claude",
+   "provider": null,
+   "condizione": "claude_settimanale_pct < soglie.claude_settimanale_soglia_pct"
+  },
+  "agy": {
+   "descr": "Antigravity/Gemini (flat, tetto orario). Riserva per lavoro conversazionale, modelli leggeri.",
+   "engine": "agy",
+   "provider": null,
+   "condizione": "agy_disponibile_pct > soglie.agy_disponibile_minimo_pct AND non in reset"
+  },
+  "deepseek": {
+   "descr": "DeepSeek prepagato. ULTIMA via: saldo piccolo, burn 2-4 $/h, 402 gia' visto il 21/08.",
+   "engine": "claude",
+   "provider": "deepseek",
+   "condizione": "deepseek_saldo_usd > soglie.deepseek_saldo_critico_usd"
+  },
+  "agy_claude": {
+   "descr": "Antigravity, bucket CLAUDE+GPT (flat, separato da Gemini). Al 100% e mai usato il 21/08.",
+   "engine": "agy",
+   "provider": null,
+   "condizione": "agy_claude_disponibile_pct > soglie.agy_disponibile_minimo_pct"
+  }
+ },
+ "ruoli": {
+  "_nota_ordine": "ORDINE CORRETTO 21/08/2026 (correzione §7 della specifica + A2A samantha_2 20260821T165830Z): claude-flat PRIMA di deepseek-a-consumo finche' il settimanale all-models e' sotto soglia. DeepSeek e' l'ULTIMA via. Questo SOVRASCRIVE la riga del mandato 'exec/sottoposti: deepseek -> agy -> claude sonnet', scritta prima che si sapesse che il settimanale Claude era all'8%.",
+  "_nota_agy_claude_rimosso": "25/08/2026 (samantha_1, primo failover reale post-riattivazione self-healing): 'agy_claude' rimosso da TUTTI i serbatoi dei ruoli sotto. Il bucket CLAUDE+GPT di Antigravity non e' mai stato realmente raggiungibile dal lancio (CASCATE_AGY in engine_adapter.py ha SOLO cascate Gemini, nessun mapping per 'claude-sonnet'/'claude-opus' sotto engine=agy): un failover reale su samantha_3 ha selezionato questo serbatoio e il processo lanciato ha finito comunque su Gemini, colpendo la sua quota esaurita invece di evitarla. La definizione del serbatoio resta sopra per riferimento futuro (se/quando engine_adapter guadagnera' un vero passthrough Claude su agy), ma non e' piu' un candidato finche' non e' verificato funzionante dal vivo.",
+  "coordinatore_critico": {
+   "serbatoi": [
+    "claude",
+    "agy",
+    "deepseek"
+   ],
+   "modelli": {
+    "claude": "opus",
+    "agy": "pro",
+    "deepseek": "deepseek-chat",
+    "agy_claude": "claude-opus"
+   },
+   "agenti": [
+    "samantha_1",
+    "samantha_2",
+    "alfredo",
+    "valerio",
+    "samantha"
+   ]
+  },
+  "coordinatore": {
+   "serbatoi": [
+    "claude",
+    "agy",
+    "deepseek"
+   ],
+   "modelli": {
+    "claude": "sonnet",
+    "agy": "pro",
+    "deepseek": "deepseek-chat",
+    "agy_claude": "claude-sonnet"
+   }
+  },
+  "sottoposto": {
+   "serbatoi": [
+    "claude",
+    "agy",
+    "deepseek"
+   ],
+   "modelli": {
+    "claude": "sonnet",
+    "agy": "flash",
+    "deepseek": "deepseek-chat",
+    "agy_claude": "claude-sonnet"
+   }
+  },
+  "exec": {
+   "serbatoi": [
+    "claude",
+    "agy",
+    "deepseek"
+   ],
+   "modelli": {
+    "claude": "sonnet",
+    "agy": "flash",
+    "deepseek": "deepseek-chat",
+    "agy_claude": "claude-sonnet"
+   }
+  }
+ },
+ "lista_bianca": {
+  "_nota": "MAI toccati da nessuna azione automatica. Match per prefisso finestra, nome processo o slug agente. agenti = TUTTI i custodi dell ecosistema (always_on + pool virtuali + coordinatori attivi), allineati alla DB agents il 2026-08-21 su ordine Manfredo MSG 14190.",
+  "finestre_prefisso": [
+   "SRV-",
+   "PROBE-"
+  ],
+  "sessioni": [
+   "services"
+  ],
+  "processi": [
+   "unified_telegram_engine",
+   "chrome",
+   "chromium",
+   "postgres",
+   "tmux",
+   "sshd",
+   "systemd"
+  ],
+  "agenti": [
+   "alfredo",
+   "aurelio",
+   "aurelio_1",
+   "auruncia_tech",
+   "auruncia_tech_1",
+   "auruncia_tech_2",
+   "cosimo",
+   "cosimo_1",
+   "cosimo_2",
+   "enrico",
+   "publio",
+   "publio_1",
+   "publio_2",
+   "radio",
+   "samantha",
+   "samantha_1",
+   "samantha_2",
+   "valerio",
+   "zero_one",
+   "zero_one_1",
+   "zero_one_2"
+  ]
+ },
+ "canali": {
+  "telegram_chat_id": -1004473228496,
+  "telegram_thread_id": 4,
+  "telegram_bot_key": "betty_core",
+  "prefisso": "🛡️ [Self Healing]",
+  "coordinatore_default": "samantha"
+ },
+ "sonda_usage": {
+  "_nota": "engine_budget.sonda_quota apre una finestra tmux usa-e-getta e costa fino a 240s: MAI piu' di una volta all'ora, risultato messo in cache su file.",
+  "intervallo_min_s": 3600,
+  "cache_path": "/root/ecosistema_agenti/logs/guardiano_usage_cache.json",
+  "abilitata": true,
+  "stale_dopo_s": 7200
+ },
+ "riallineo_sospeso": {
+  "aurelio": 1787337075.9036498,
+  "aurelio_1": 1787337075.9036498,
+  "auruncia_tech": 1787337075.9036498,
+  "auruncia_tech_1": 1787337075.9036498,
+  "auruncia_tech_2": 1787337075.9036498,
+  "radio": 1787337075.9036498,
+  "publio_1": 1787337075.9036498,
+  "publio_2": 1787337075.9036498
+ },
+ "_nota_riallineo_sospeso": "Scadenze unix: migrazione exec_migra5_opus in corso il 21/08 sera. Passata la scadenza il riallineo riprende da solo; per prorogare basta rialzare i numeri.",
+ "in_migrazione": [],
+ "_nota_riallineo_off": "DISATTIVATO 21/08/2026 19:52 su segnalazione di samantha_2. Il riallineo scriveva il model letto dal processo sopra record gia' impostati a opus da una migrazione in corso ma non ancora riavviati: con provider nullo quel model e' invalido per claude e --model veniva scartato in silenzio. Riattivare SOLO con le quattro guardie ora presenti nel codice: (a) niente record con chiavi migrato_*/pre_opus_*/fix_model_* delle ultime 24h, (b) mai un model invalido per claude quando provider e' nullo, (c) la stessa differenza confermata in 2 cicli a 10+ minuti di distanza, (d) finestre condivise solo segnalate.",
+ "_nota_20260821_2010": "samantha_2: TUTTE le azioni=false (solo osservazione) dopo i failover errati 19:46-19:50 (exec_fleet_dashboard, exec_campanellaio_dinamico, exec_migra5_opus: 'Usage limit reached · continuing shortly' letto come quota esaurita). Riattivare per voce dopo le correzioni dell'exec + 3 cicli puliti. Backup: guardiano.conf.json.bak_20260821_2005",
+ "_nota_azioni_off": "Tutte le AZIONI sono OFF dal 21/08/2026 20:05 (ordine di samantha_2). Il guardiano resta in SOLA OSSERVAZIONE: sensori, ledger, alert. Le condizioni per riattivarle una per una sono elencate nel report /tmp/betty_docs/report_guardiano_2108.md.",
+ "guardiani": {
+  "_nota": "SENSORE F4 — meta-sorveglianza dei guardiani (exec_guardiano_f4, 21/08/2026). Il 21/08 quattro guardiani su quattro erano difettosi insieme e nessuno se n'e' accorto: i sorveglianti non erano sorvegliati. Qui si OSSERVA e si SEGNALA, mai si interviene su un altro guardiano.",
+  "abilitato": true,
+  "finestra_meta_ore": 1,
+  "_nota_finestra_meta": "Finestra temporale per scartare allarmi vecchi: un problema deve avere occorrenze entro queste ore per essere segnalato come attivo.",
+  "include_se_stesso": true,
+  "_nota_sorvegliati": "Lista estendibile a mano. Viene UNITA ai servizi trovati vivi (services:SRV-*): la conf da sola non vede un guardiano acceso stanotte, i servizi da soli non vedono chi gira da cron.",
+  "sorvegliati": [
+   "deepseek_spend_guard",
+   "check_agenti_vivi",
+   "sentinella_contesto",
+   "inbox_guard_service",
+   "task_autopilot",
+   "guardiano"
+  ],
+  "scopri_da_servizi": false,
+  "_nota_scopri": "false = non si aggiungono da soli TUTTI i SRV-* (ce ne sono 22 e la maggior parte non sono guardiani). Si usa mappa_servizi per i nomi che non coincidono con lo slug.",
+  "mappa_servizi": {
+   "deepseek_spend_guard": "deepseek_spend_guard",
+   "autopilot": "task_autopilot",
+   "guardiano": "guardiano",
+   "surfshark_vpn_watchdog": "surfshark_watchdog"
+  },
+  "_nota_ripetizioni": "(a) Stessa firma (guardiano+tipo+soggetto) oltre questa soglia MENTRE il soggetto non cambia stato = guardiano rotto, non emergenza. deepseek_spend_guard il 21/08 ha ripetuto lo stesso allarme ogni 5 minuti per ore.",
+  "ripetizioni_soglia": 3,
+  "_nota_eta": "(c) Un dato piu' vecchio di dato_max_eta_s non puo' giustificare un'azione: diventa 'attendi/rimisura'. Eta' IGNOTA vale come inutilizzabile — un numero senza eta' sembra fresco quanto uno appena letto.",
+  "dato_max_eta_s": 3600,
+  "allarme_max_eta_s": 86400,
+  "_nota_ticket": "Esito verso l'umano: SOLO ticket A2A alla casella del pool (a2a/samantha/inbox via canali.coordinatore_default), MAI Telegram diretto. Dedup per firma: un ticket per firma finche' lo stato non cambia.",
+  "cartelle_ticket": [
+   "/root/ecosistema_agenti/a2a/samantha/inbox",
+   "/root/ecosistema_agenti/a2a/samantha/read",
+   "/root/ecosistema_agenti/a2a/samantha_1/inbox",
+   "/root/ecosistema_agenti/a2a/samantha_2/inbox"
+  ],
+  "_nota_ordini_fermi": "(e) Sensore 'ordine_fermo_in_casella' (samantha_1, 21/08: 8 pannelli su 38 con un ordine di Manfredo mai sottomesso, fermo 6-36 min). SOLA RILEVAZIONE: il rilancio di un ordine gia' eseguito e' un danno, e il rimedio validato vive in tampone_ordini_fermi.py / exec_ordini_fermi.",
+  "ordini_fermi_abilitato": true,
+  "ordine_fermo_soglia_s": 300,
+  "ticket_per_ciclo_max": 3,
+  "_nota_tetto": "Tetto di ticket per ciclo (oltre alle auto-anomalie, che sono sempre aggregate in uno solo). Al primo giro dopo un deploy il registro delle firme e' vuoto e ogni firma storica sembra nuova: senza tetto la casella del pool riceverebbe decine di ticket insieme, cioe' proprio il difetto che questo sensore denuncia.",
+  "finestra_minima_ripetizione_s": 900,
+  "_nota_finestra_minima": "Correzione samantha_2, 21/08 20:46 (ticket b8a4): 'quattro righe' non e' una ripetizione, sono quattro cicli consecutivi da ~27s. Il verdetto 'guardiano rotto' richiede che la ripetizione duri almeno questa finestra (15'), oltre a superare ripetizioni_soglia. Inoltre contano solo gli eventi che CHIEDONO un'azione (EVENTI_CHE_CHIEDONO_AZIONE nel codice): una misura di stato ristampata ad ogni ciclo e' il mestiere del guardiano, non un suo difetto.",
+  "tutte_le_caselle": true,
+  "radice_a2a": "/root/ecosistema_agenti/a2a",
+  "file_per_casella_max": 120,
+  "_nota_caselle": "Si guardano TUTTE le caselle a2a/<destinatario>/{inbox,read}, non solo quella del pool (samantha_2, 21/08): il pattern di un guardiano che si ripete si vede su chi RICEVE i suoi allarmi. Caso reale: drift_detector manda a enrico lo stesso promemoria ogni 4h da 11 giorni (33 messaggi identici) e sulla casella del pool non ne compariva nessuno. I timestamp si leggono dal NOME del file (20260821T022746Z), MAI dall'mtime: a2a_ack sposta i file da inbox/ a read/ e l'mtime mente (verificato sul ticket e6f3: 4 messaggi su 2 giorni risultavano compressi in 4 ore).",
+  "_nota_impronta": "Per soggetti MISURABILI l'impronta include il VALORE A FASCE (load a 5, saldo a 0.5$, percentuali a 10, RAM a 500MB). 'Si ripete senza cambio di stato' vale solo se anche il valore e' fermo: 7 allarmi di carico con load 91/32/43/39/24 sono 7 misure diverse e tutte vere, non una ripetizione (samantha_2, ticket 2351).",
+  "intervallo_medio_max_s": 21600,
+  "ripetizioni_molte": 8,
+  "_nota_cadenza": "Non basta contare: conta la CADENZA (samantha_2, ticket e6f3). 4 messaggi su 2 giorni (intervallo ~12h) sono un allarme ricorrente normale e in quel caso era pure vero; 33 promemoria identici in 11 giorni lo sono, e cosi' lo stesso allarme ogni 5 minuti per ore. Il verdetto scatta se le occorrenze sono TANTE (>= ripetizioni_molte) OPPURE FITTE (intervallo medio <= intervallo_medio_max_s).",
+  "scansione_caselle_ogni_s": 300,
+  "_nota_scansione": "La scansione delle 268 caselle A2A costa: misurato in produzione, con cache del filesystem fredda un ciclo passava da 15s a 110-300s, e un guardiano cieco per cinque minuti e' proprio il difetto che questo sensore denuncia negli altri. Fra una scansione e l'altra si riusa il risultato precedente dichiarandone l'eta' (campo scansione_eta_s). La meta-sorveglianza non ha bisogno del minuto: un guardiano che si ripete lo fa per ore.",
+  "_nota_resource_watchdog_ritirato_20260822": "samantha_1 22/08/2026 01:20: SRV-Resource_Watchdog SPENTO (primo passo dell'unificazione, ordine di Manfredo 'procedi'). Il guardiano ne copre la funzione: stesse soglie (load5 30, ram_disponibile 1200/600 MB, PSI) e allerta anche Manfredo, non solo Samantha. Tolto da 'sorvegliati' e 'mappa_servizi' per non generare un allarme su un servizio spento di proposito. ATTENZIONE: il MODULO resource_watchdog.py resta e serve — guardiano.py fa 'import resource_watchdog as rw' e ne riusa le misure. Spento il DEMONE, non il codice. Backup: guardiano.conf.json.bak_2208_unif. Reversibile: rimettere la voce nelle due liste e rilanciare la finestra services:4."
+ },
+ "_nota_f4_20260821": "exec_guardiano_f4: aggiunto sensore 'guardiani' (meta-sorveglianza a/b/c/d) e sensore 'ordine_fermo_in_casella' (e). Entrambi in SOLA OSSERVAZIONE. Nessuna azione preesistente e' stata riattivata: restano tutte false. Backup: guardiano.conf.json.bak_2108_f4",
+ "_nota_f4_cpu_servizi": "21/08 (samantha_1 via samantha_2): un servizio che lancia un CLI per mestiere (health_cron -> sonda /usage ~3') produce un picco di CPU per costruzione. 'segnala_servizio_runaway' scatta solo se il picco DURA oltre soglie.sonda_vita_attesa_s, oppure se il processo caldo non ha figli e nessuna finestra PROBE-Usage e' viva. Nel ledger finiscono durata del picco e presenza figli/sonda come fonte.",
+ "servizi_attesi_spenti": [
+  "_nota: F-A 22/08/2026 (exec_fa_guardiano, mandato punto 4). Servizi SPENTI DI PROPOSITO in manutenzione: la loro assenza o un pane senza figli NON produce segnala_servizio_giu/muto (ledger: servizio_atteso_spento). Match ESATTO sul nome normalizzato (SRV- via, '-'->'_', case-insensitive). Togliere la voce quando il servizio torna in esercizio.",
+  "SRV-Cosimo_3Min_Watchdog",
+  "cosimo_watchdog",
+  "cosimo_watchdog_3min",
+  "SRV-Autopilot",
+  "task_autopilot",
+  "autopilot",
+  "SRV-Live_Dashboard",
+  "SRV-Live_Dashboard_Refresh",
+  "live_dashboard",
+  "live_dashboard_refresh",
+  "SRV-Sentinella_Contesto",
+  "sentinella_contesto",
+  "sentinella",
+  "SRV-Sensore_Memoria_Leggera",
+  "sensore_memoria_leggera",
+  "sensore",
+  "SRV-Drift_Detector",
+  "drift_detector",
+  "SRV-Resource_Watchdog",
+  "resource_watchdog",
+  "SRV-Inbox_Guard",
+  "inbox_guard",
+  "inbox_guard_service",
+  "SRV-Whisper_Daemon",
+  "whisper_daemon",
+  "whisper"
+ ],
+ "contesto": {
+  "_nota": "F-A 22/08/2026 (exec_fa_guardiano, mandato punto 3): sensore contesto in SOLA OSSERVAZIONE. Misura i token in finestra di ogni agente claude dal transcript (stesso misura_transcript della sentinella/sensore), soglie per modello dal processo (CLAUDE_CODE_MAX_CONTEXT_TOKENS nell'environ del CLI, ripiego config provider, ripiego finestra_default_token). Dedup per agente+fascia: un evento quando la fascia cambia (sopra_soglia/critico/rientrato), stato in .guardiano_contesto.json. Il canale previsto (a2a all'agente se idle, altrimenti al coordinatore) viene CALCOLATO e scritto, MAI usato: nessun A2A di rinfresco, nessun cron toccato. Il drift NON e' qui (ordine 14458: autopilot).",
+  "abilitato": true,
+  "sola_osservazione": true,
+  "intervallo_s": 600,
+  "frazione_avviso": 0.75,
+  "frazione_critica": 0.9,
+  "finestra_default_token": 1000000,
+  "finestra_per_modello": {
+   "_nota": "Finestra di contesto per i modelli SENZA limite nell'environ (Claude nativo). Chiave = nome modello dal transcript (message.model) o alias del cmdline, match esatto o per prefisso. 24/08/2026: allineati tutti i modelli Claude/DeepSeek a 1.000.000 token.",
+   "claude-opus-5": 1000000,
+   "opus": 1000000,
+   "claude-sonnet-5": 1000000,
+   "sonnet": 1000000,
+   "claude-haiku-4-5-20251001": 1000000,
+   "claude-haiku-4-5": 1000000,
+   "claude-haiku": 1000000,
+   "haiku": 1000000,
+   "deepseek-v4-flash": 1000000,
+   "deepseek-v4-pro": 1000000
+  }
+ },
+ "_nota_fa_20260822": "exec_fa_guardiano (voce #8 piano revisione): aggiunti 'servizi_attesi_spenti' e 'contesto' (sola osservazione). Log testuale /tmp/guardiano.log (ts|modulo|livello|azione|oggetto|valore|fonte|eta_s|firma) scritto da ledger(). NESSUNA azione riattivata: restano tutte false. Backup: guardiano.conf.json.bak_2208_fa_guardiano"
+}
