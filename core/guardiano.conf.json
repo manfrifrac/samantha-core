@@ -15,8 +15,8 @@
   "cpu_runaway_pct": 50,
   "cpu_runaway_persistenza_s": 300,
   "reset_quota_attesa_max_min": 30,
-  "deepseek_saldo_basso_usd": 2.0,
-  "deepseek_saldo_critico_usd": 2.0,
+  "deepseek_saldo_basso_usd": 1.0,
+  "deepseek_saldo_critico_usd": 0.20,
   "claude_settimanale_soglia_pct": 70,
   "claude_sessione_soglia_pct": 90,
   "agy_disponibile_minimo_pct": 5,
@@ -79,21 +79,21 @@
   }
  },
  "serbatoi": {
-  "_nota": "I TRE BUDGET. 'condizione' e' valutata sui sensori: se falsa il serbatoio e' saltato, qualunque sia la preferenza di ruolo.",
+  "_nota": "I TRE BUDGET. 'condizione' e' valutata sui sensori: se falsa il serbatoio e' saltato, qualunque sia la preferenza di ruolo. 03/09/2026: abbonamento Claude annullato da Manfredo -> serbatoio disattivato, AGY primario.",
   "claude": {
-   "descr": "Abbonamento Claude (flat, gia' pagato). Il piu' economico a margine finche' la quota settimanale regge.",
+   "descr": "Abbonamento Claude (DISMESSO/ANNULLATO il 03/09/2026 su decisione Manfredo).",
    "engine": "claude",
    "provider": null,
-   "condizione": "claude_settimanale_pct < soglie.claude_settimanale_soglia_pct"
+   "condizione": "false"
   },
   "agy": {
-   "descr": "Antigravity/Gemini (flat, tetto orario). Riserva per lavoro conversazionale, modelli leggeri.",
+   "descr": "Antigravity/Gemini (flat Google AI Ultra, quota oraria/settimanale capiente). SERBATOIO PRIMARIO.",
    "engine": "agy",
    "provider": null,
    "condizione": "agy_disponibile_pct > soglie.agy_disponibile_minimo_pct AND non in reset"
   },
   "deepseek": {
-   "descr": "DeepSeek prepagato. ULTIMA via: saldo piccolo, burn 2-4 $/h, 402 gia' visto il 21/08.",
+   "descr": "DeepSeek prepagato. Riserva a consumo per failover secondario.",
    "engine": "claude",
    "provider": "deepseek",
    "condizione": "deepseek_saldo_usd > soglie.deepseek_saldo_critico_usd"
@@ -106,11 +106,10 @@
   }
  },
  "ruoli": {
-  "_nota_ordine": "ORDINE CORRETTO 21/08/2026 (correzione §7 della specifica + A2A samantha_2 20260821T165830Z): claude-flat PRIMA di deepseek-a-consumo finche' il settimanale all-models e' sotto soglia. DeepSeek e' l'ULTIMA via. Questo SOVRASCRIVE la riga del mandato 'exec/sottoposti: deepseek -> agy -> claude sonnet', scritta prima che si sapesse che il settimanale Claude era all'8%.",
+  "_nota_ordine": "ORDINE 03/09/2026 (dismissione Claude abbonamento): AGY e' il serbatoio primario per tutta la flotta; DeepSeek resta riserva a consumo se saldo > soglia.",
   "_nota_agy_claude_rimosso": "25/08/2026 (samantha_1, primo failover reale post-riattivazione self-healing): 'agy_claude' rimosso da TUTTI i serbatoi dei ruoli sotto. Il bucket CLAUDE+GPT di Antigravity non e' mai stato realmente raggiungibile dal lancio (CASCATE_AGY in engine_adapter.py ha SOLO cascate Gemini, nessun mapping per 'claude-sonnet'/'claude-opus' sotto engine=agy): un failover reale su samantha_3 ha selezionato questo serbatoio e il processo lanciato ha finito comunque su Gemini, colpendo la sua quota esaurita invece di evitarla. La definizione del serbatoio resta sopra per riferimento futuro (se/quando engine_adapter guadagnera' un vero passthrough Claude su agy), ma non e' piu' un candidato finche' non e' verificato funzionante dal vivo.",
   "coordinatore_critico": {
    "serbatoi": [
-    "claude",
     "agy",
     "deepseek"
    ],
@@ -130,7 +129,6 @@
   },
   "coordinatore": {
    "serbatoi": [
-    "claude",
     "agy",
     "deepseek"
    ],
@@ -143,7 +141,6 @@
   },
   "sottoposto": {
    "serbatoi": [
-    "claude",
     "agy",
     "deepseek"
    ],
@@ -156,7 +153,6 @@
   },
   "exec": {
    "serbatoi": [
-    "claude",
     "agy",
     "deepseek"
    ],

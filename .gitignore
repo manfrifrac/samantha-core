@@ -1,0 +1,44 @@
+# ==============================================================================
+# Samantha Core — .gitignore
+# ==============================================================================
+
+# Python
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+
+# Runtime state, inboxes and logs
+a2a/*/inbox/*
+!a2a/.gitkeep
+a2a/*/read/*
+logs/*
+!logs/.gitkeep
+*.log
+*.lock
+*.pid
+.guardiano_*.json
+.campanellaio_*.json
+.autopilot_*.json
+*.tmp
+*.bak
+/tmp/betty_*
+
+# Environment, secrets & credentials
+.env
+*.env
+*.key
+*.pem
+*.token.json
+tokens/
+
+# OS & Editor
+.DS_Store
+.idea/
+.vscode/
+.claude/
+.gemini/

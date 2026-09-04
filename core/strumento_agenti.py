@@ -1368,6 +1368,26 @@ def lancia_agente(slug, data, studio, nome_win, conv_id, system_prompt,
         launch_cmd = f"export HOME='/root'; " + launch_cmd
         # claude/qwen puri via HOME: anche per loro /root e' la home dei progetti
 
+    # FIX 31/08/2026 (mandato samantha_1, incidente reale 'orazio': 13 finestre
+    # 'fiscale:AGY-ORAZIO' + 92 processi in 18 minuti). La guardia "GIA' ACCESO"
+    # di comando_accendi_agente, sopra nella chiamata, rifiuta SOLO se trova un
+    # processo motore ancora VIVO sulla finestra gia' registrata — il caso
+    # legittimo del revive (finestra morta, shell nuda) passa oltre di
+    # proposito. Ma qui sotto si faceva SEMPRE `tmux new-window`, anche quando
+    # una finestra omonima esisteva gia' (morta o viva): ogni riavvio ne
+    # accatastava una in piu' invece di riprendere/pulire quella vecchia.
+    # Chiudiamo prima qualunque finestra residua con questo stesso nome — vivo
+    # o morto che sia, comprese eventuali omonime doppie da race precedenti —
+    # stesso identico percorso di spegni_agente/spegni_finestra: mai una
+    # biforcazione.
+    _pulizia = tmux_esatto.chiudi_e_verifica_finestre(studio, nome_win)
+    if not _pulizia.get("ok") and not _pulizia.get("gia_spento"):
+        raise RuntimeError(
+            f"Impossibile ripulire finestra/e preesistenti '{studio}:{nome_win}' "
+            f"prima del lancio (pid ancora vivi: {_pulizia.get('pids_vivi')}, "
+            f"finestre ancora vive: {_pulizia.get('finestre_vive')}). Lancio annullato "
+            f"per non biforcare in un'altra finestra duplicata.")
+
     res = _tmux("has-session", "-t", studio)
     if res.returncode != 0:
         cmd = f"tmux new-session -d -s {studio} -n '{nome_win}' {shlex.quote(launch_cmd)}"

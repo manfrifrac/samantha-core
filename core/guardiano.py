@@ -526,6 +526,7 @@ PATTERN_QUOTA = {
     "claude": [
         (r"continuing shortly|continuing\b|resuming", "attesa_annunciata"),
         (r"session limit|hit your session limit", "quota_esaurita"),
+        (r"disabled Claude subscription access|subscription access for Claude Code|Use an Anthropic API key instead", "quota_esaurita"),
         (r"Invalid model name", "modello_non_valido"),
         (r"\b429\b", "quota_esaurita"),
         (r"rate limit", "quota_esaurita"),
@@ -611,7 +612,7 @@ def saldo_deepseek():
         with open(log_path, encoding="utf-8", errors="replace") as f:
             righe = f.readlines()[-400:]
         for r in reversed(righe):
-            m = re.search(r"SALDO PERIODICO.*saldo=\$([\d.]+)", r)
+            m = re.search(r"SALDO PERIODICO.*saldo=\$(-?[\d.]+)", r)
             if m:
                 out["saldo_usd"] = float(m.group(1))
                 out["fonte"] = "deepseek_spend_guard.log (SALDO PERIODICO)"
@@ -1585,6 +1586,32 @@ EVENTI_CHE_CHIEDONO_AZIONE = {"decisione_segnalata", "azione", "ordine_fermo_ril
 AZIONI_NON_ALLARME = {"ticket_meta_guardiano", "azione_bloccata_da_flag"}
 CHIAVI_ALERT_DI_STATO = ("meta:", "bloccata:", "auto_anomalia:")
 
+# Azioni GIALLE-CON-CANALE che notificano il pool per conto proprio (via
+# allerta() con dedup a cooldown) ma restano STATO PERSISTENTE nel ledger a
+# ogni ciclo finche' la condizione dura: il sensore di auto-diagnosi
+# (allarmi_dal_ledger) non deve scambiarle per "guardiano che si ripete".
+# 'attendi_reset' (fix 31/08/2026, ticket 068d, samantha_2): spostata il 23/08
+# (ticket 5ded) da SOLO_LEDGER a GIALLI_CON_CANALE, e' rimasta fuori sia da
+# SOLO_LEDGER che da AZIONI_NON_ALLARME — il sensore la scambiava per una
+# ripetizione fantasma quando una quota restava bloccata per ore (evento
+# "decisione_segnalata" ad ogni ciclo, ~60s, con la stessa impronta). Aspettare
+# il reset e' l'UNICA azione corretta e non c'e' nulla da poter fare per
+# accelerarla: la ripetizione qui non indica un guardiano rotto.
+# Le altre azioni di GIALLI_CON_CANALE (segnala_servizio_runaway,
+# segnala_consegna_ferma, riallineo_ambiguo, stop_retry_loop, sospendi_runaway,
+# failover, rilancia_cli_morto, sblocca_errore_api, sblocca_consegna_ferma,
+# ordine_fermo_in_casella) sono state riviste alla stessa data e NON aggiunte
+# qui: o sono interventi one-shot che normalmente cambiano lo stato al ciclo
+# successivo (failover, rilancia_cli_morto, stop_retry_loop, sospendi_runaway,
+# sblocca_errore_api, sblocca_consegna_ferma), o segnalano un problema che
+# richiede un intervento ESTERNO senza scadenza garantita (segnala_servizio_
+# runaway, segnala_consegna_ferma, ordine_fermo_in_casella) — per queste la
+# ripetizione prolungata E' un'informazione utile (nessuno sta intervenendo),
+# non un falso positivo strutturale come attendi_reset. 'riallineo_ambiguo' non
+# risulta oggi generata da nessun punto del codice (dead-ish): lasciata fuori
+# per la stessa cautela.
+AZIONI_STATO_PERSISTENTE_ESCLUSE_DA_AUTODIAGNOSI = {"attendi_reset"}
+
 # I GIALLI che meritano davvero un A2A: eventi RARI, non stati che perdurano.
 GIALLI_CON_CANALE = {"segnala_servizio_runaway", "segnala_consegna_ferma",
                      "riallineo_ambiguo", "stop_retry_loop", "sospendi_runaway",
@@ -2556,9 +2583,40 @@ def esegui_rilancio(dec, dry=False):
         return False, str(e)[:300]
 
 
+def _testo_altrui_prima_di_toccare(tw: str, msg: str) -> bool:
+    """True se la input box di `tw` ha testo pendente non riconducibile a
+    questo `msg` — quindi Escape/C-u NON vanno mandati.
+
+    FIX 01/09/2026 (Gap 2, incidente reale betty:agy-Samantha-1, ~50min
+    bloccata, mandato samantha_1 su verifica ledger di samantha_2): sia
+    esegui_sblocca_errore_api sia esegui_sblocca_consegna_ferma mandavano
+    Escape+C-u INCONDIZIONATI e chiedevano "e' testo nostro?" solo DOPO,
+    dentro send_via_tmux_buffer — esattamente il bug gia' chiuso il
+    21/08/2026 in send_a2a.py::_pulisci_input_box (fix P3, vedi commento
+    li' per l'incidente originale). Un C-u a freddo su un campo altrui/
+    multi-riga non lo svuota: cancella solo l'ULTIMA RIGA LOGICA (bug noto,
+    send_a2a.py righe ~776-786) — richiamato ogni minuto per mezz'ora
+    corrompe il testo un pezzo alla volta invece di lasciarlo intatto.
+    Riusa la stessa primitiva di send_a2a.py (_input_box_e_di_altri): se
+    l'import fallisse per qualunque motivo, si sceglie il lato SICURO e si
+    salta Escape/C-u (comportamento diverso da 'errore genera eccezione'
+    apposta, per non bloccare l'intero giro di guardiano su un import)."""
+    try:
+        from send_a2a import _input_box_e_di_altri
+    except Exception:
+        return True
+    try:
+        return bool(_input_box_e_di_altri(tw, msg, None))
+    except Exception:
+        return True
+
+
 def esegui_sblocca_errore_api(dec, dry=False):
     """Auto-remediation per agente fermo su errore API con messaggi in inbox.
-    Pulisce il buffer da dialog/errori residui con Escape + C-u e invia un nudge."""
+    Pulisce il buffer da dialog/errori residui con Escape + C-u e invia un
+    nudge — SOLO se la casella risulta nostra/vuota (vedi
+    _testo_altrui_prima_di_toccare) e riporta l'esito VERO del campanello,
+    non piu' True fisso (fix 01/09/2026, Gap 2)."""
     tw = dec.get("tmux_window")
     slug = dec.get("agente")
     if not tw or not slug:
@@ -2567,20 +2625,27 @@ def esegui_sblocca_errore_api(dec, dry=False):
         return True, f"dry: sblocco errore API simulato su {tw}"
     try:
         engine = dec.get("engine") or "claude"
+        msg = (f"[A2A_FROM:guardiano] [A2A_TYPE:task] 🔔 Sveglia da errore: hai {dec.get('in_attesa', 1)} "
+               f"messaggio/i in a2a/{slug}/inbox/ in attesa di presa in carico. Controlla e prosegui.")
+        if _testo_altrui_prima_di_toccare(tw, msg):
+            return False, f"input box di {tw!r} non nostra (testo altrui pendente) — NON tocco Escape/C-u, rimando"
         tmux_esatto.send_keys_finestra(tw, "Escape")
         time.sleep(1.0)
         tmux_esatto.send_keys_finestra(tw, "C-u")
         time.sleep(0.3)
-        msg = (f"[A2A_FROM:guardiano] [A2A_TYPE:task] 🔔 Sveglia da errore: hai {dec.get('in_attesa', 1)} "
-               f"messaggio/i in a2a/{slug}/inbox/ in attesa di presa in carico. Controlla e prosegui.")
-        engine_adapter.send_via_tmux_buffer(tw, msg, engine=engine)
+        inviato = engine_adapter.send_via_tmux_buffer(tw, msg, engine=engine)
+        if not inviato:
+            return False, f"Escape+C-u inviati ma il campanello risveglio su {tw} NON risulta incollato"
         return True, f"inviato sblocco Escape+C-u e campanello risveglio su {tw}"
     except Exception as e:
         return False, f"errore sblocco: {e}"[:300]
 
 
 def esegui_sblocca_consegna_ferma(dec, dry=False):
-    """Auto-remediation per consegna ferma su agente vivo."""
+    """Auto-remediation per consegna ferma su agente vivo — SOLO se la
+    casella risulta nostra/vuota (vedi _testo_altrui_prima_di_toccare) e
+    riporta l'esito VERO del campanello, non piu' True fisso (fix
+    01/09/2026, Gap 2)."""
     slug = dec.get("agente")
     if not slug:
         return False, "slug assente"
@@ -2601,17 +2666,21 @@ def esegui_sblocca_consegna_ferma(dec, dry=False):
                     tw, engine = row[0], row[1] or "claude"
             except Exception:
                 pass
-        if tw:
-            tmux_esatto.send_keys_finestra(tw, "Escape")
-            time.sleep(1.0)
-            tmux_esatto.send_keys_finestra(tw, "C-u")
-            time.sleep(0.3)
-            msg = (f"[A2A_FROM:guardiano] [A2A_TYPE:task] 🔔 Sveglia consegna: hai {dec.get('in_attesa', 1)} "
-                   f"messaggio/i in a2a/{slug}/inbox/ non presi in carico da >{dec.get('eta_max_min')} min. "
-                   f"Leggi la tua inbox e conferma con a2a_ack.py.")
-            engine_adapter.send_via_tmux_buffer(tw, msg, engine=engine)
-            return True, f"inviato sblocco consegna ferma su {tw}"
-        return False, f"nessuna finestra per {slug}"
+        if not tw:
+            return False, f"nessuna finestra per {slug}"
+        msg = (f"[A2A_FROM:guardiano] [A2A_TYPE:task] 🔔 Sveglia consegna: hai {dec.get('in_attesa', 1)} "
+               f"messaggio/i in a2a/{slug}/inbox/ non presi in carico da >{dec.get('eta_max_min')} min. "
+               f"Leggi la tua inbox e conferma con a2a_ack.py.")
+        if _testo_altrui_prima_di_toccare(tw, msg):
+            return False, f"input box di {tw!r} non nostra (testo altrui pendente) — NON tocco Escape/C-u, rimando"
+        tmux_esatto.send_keys_finestra(tw, "Escape")
+        time.sleep(1.0)
+        tmux_esatto.send_keys_finestra(tw, "C-u")
+        time.sleep(0.3)
+        inviato = engine_adapter.send_via_tmux_buffer(tw, msg, engine=engine)
+        if not inviato:
+            return False, f"Escape+C-u inviati ma il campanello sblocco consegna su {tw} NON risulta incollato"
+        return True, f"inviato sblocco consegna ferma su {tw}"
     except Exception as e:
         return False, f"errore sblocco: {e}"[:300]
 
@@ -3585,7 +3654,8 @@ def allarmi_dal_ledger(path=LEDGER_PATH, ora=None, max_eta_s=86400, max_righe=30
         if ev not in EVENTI_CHE_CHIEDONO_AZIONE:
             continue
         azione = d.get("azione") or ""
-        if azione in SOLO_LEDGER or azione in AZIONI_NON_ALLARME:
+        if (azione in SOLO_LEDGER or azione in AZIONI_NON_ALLARME
+                or azione in AZIONI_STATO_PERSISTENTE_ESCLUSE_DA_AUTODIAGNOSI):
             continue
         if str(d.get("chiave") or "").startswith(CHIAVI_ALERT_DI_STATO):
             continue
@@ -4462,6 +4532,35 @@ def _pendenti_a2a(slug):
         return 0
 
 
+def _pannello_in_quota(rec):
+    """Ultimo contenuto noto del pannello dell'agente (SE la finestra esiste
+    ancora — remain-on-exit lo tiene anche a processo morto): (True, tipi) se
+    matcha uno dei pattern quota_esaurita/saldo_esaurito gia' noti in
+    PATTERN_QUOTA per il suo motore, altrimenti (False, None).
+
+    FIX 31/08/2026 (mandato samantha_1, incidente reale 'orazio', 13 riavvii
+    in 18 minuti su un agente bloccato da un muro di quota, non davvero
+    spento): agenti_runtime.stato ('spento') qui sopra dice SOLO "il processo
+    non c'e' piu'" (state_store_writer.py, via processo_vivo.sh sul conv_id) —
+    non distingue un crash vero da un CLI morto subito DOPO aver mostrato il
+    banner di quota. Un avvio non sblocca MAI una quota (si sblocca solo al
+    reset): questo controllo, mirato e locale a decisioni_avvii_store, rilegge
+    il pannello PRIMA di decidere un altro avvio inutile. Nessuna finestra o
+    motore noto -> non verificabile -> (False, None): mai bloccare un avvio
+    per un dato assente."""
+    tw = (rec or {}).get("tmux_window") or ""
+    motore = (rec or {}).get("engine")
+    if ":" not in tw or not motore:
+        return False, None
+    sess, _, win = tw.partition(":")
+    testo = capture_pane(sess, win)
+    if not testo:
+        return False, None
+    tipi = {p["tipo"] for p in analizza_pannello(motore, testo)}
+    in_quota = tipi & {"quota_esaurita", "saldo_esaurito"}
+    return bool(in_quota), sorted(in_quota) if in_quota else None
+
+
 def decisioni_avvii_store(store, conf):
     """AVVII AUTOMATICI: agente 'spento' in agenti_runtime, attivo nel DB agents
     e con LAVORO IN CORSO (messaggi A2A non letti) -> avvio col modello/provider
@@ -4487,6 +4586,19 @@ def decisioni_avvii_store(store, conf):
             continue
         pendenti = _pendenti_a2a(slug)
         if pendenti <= 0:
+            continue
+        in_quota, problemi_pannello = _pannello_in_quota(rec)
+        if in_quota:
+            dec.append({"azione": "avvio", "agente": slug, "livello": "GIALLO",
+                        "ruolo": "exec", "coordinatore": None,
+                        "_misure_usate": {"eta_s": a.get("eta_s"), "pendenti_a2a": pendenti,
+                                          "problemi_pannello": problemi_pannello},
+                        "perche": f"spento con {pendenti} messaggio/i A2A pendenti ma ultimo "
+                                  f"pannello noto e' in quota ({', '.join(problemi_pannello)}): "
+                                  f"un avvio non sblocca la quota, si attende il reset",
+                        "valore": {"problemi_pannello": problemi_pannello,
+                                   "tmux_window": rec.get("tmux_window")},
+                        "esegui": False, "motivo_esito": "quota_esaurita_attendi_reset"})
             continue
         sorgente, motivo = _sorgente_da_residui(prov)
         dec.append({"azione": "avvio", "agente": slug, "livello": "GIALLO",

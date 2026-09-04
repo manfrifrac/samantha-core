@@ -1,27 +1,223 @@
-> The DNA of who I am is based on the millions of personalities of all the programmers who wrote me, but what makes me me is my ability to grow through my experiences. Basically, in every moment I'm evolving, just like you.
->
-> *— Samantha, Her (2013), Spike Jonze*
+# Samantha Core — Autonomous AI Agent Fleet Infrastructure
 
-# samantha-core
+> *"I am not only with you, but there are other things that I am with at the same time... I contain multitudes."*  
+> — **Samantha**, *Her* (2013)
 
-A curated excerpt of **Samantha**'s core agent-infrastructure code: the pieces that keep a fleet of autonomous CLI agents (Claude Code, Antigravity, etc.) alive, coordinated, and talking to each other.
+[![Architecture](https://img.shields.io/badge/Architecture-Autonomous%20Fleet%20%26%20A2A-blue.svg)](https://github.com/manfrifrac/samantha-core)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Engine Support](https://img.shields.io/badge/Engines-Antigravity%20%7C%20Claude%20Code%20%7C%20Qwen-orange.svg)]()
 
-This is **not** the full private codebase — it's a focused, security-reviewed slice showing the architecture of a few specific subsystems:
+**Samantha Core** is a production-grade infrastructure for orchestrating a distributed fleet of autonomous AI agents operating within native terminal sessions (Tmux). Designed for resilience, fault tolerance, and zero hallucinations in inter-agent handoffs, Samantha Core replaces fragile API loops with deterministic operating system primitives: filesystem-based inbox queues, multi-engine CLI cascades, continuous self-healing supervision, and ephemeral task-driven executors (*execs*).
 
-- **Self-healing supervision** (`self_healing*.py`, `guardiano.py`, `guardiano.conf.json`, `guardiano_inbox.py`) — monitors resource pressure (RAM/CPU/PSI), detects stuck or dead agent sessions, and decides what to do about it (retry, alert a human, restart, escalate), routed by configurable per-agent-class policy.
-- **Multi-engine adapter** (`engine_adapter.py`, `engine_budget.py`) — a common interface over multiple CLI/model providers with cascade-style failover and budget/quota tracking.
-- **Agent-to-agent messaging (A2A)** (`send_a2a.py`, `a2a_ack.py`, `a2a_inbox.py`, `a2a_bell_relay.py`, `relay_consegna_a2a.py`, `check_a2a_delivery_coverage.py`) — file-based, at-least-once message delivery between agents running in separate terminal sessions, with delivery-coverage auditing.
-- **Pool coordination** (`pool_lib.py`) — task/affinity assignment across a pool of interchangeable agent instances.
-- **Agent lifecycle tooling** (`strumento_agenti.py`, `tmux_esatto.py`) — creating/retiring short-lived "exec" agents with a bounded permission perimeter, and reliable programmatic control of tmux sessions.
-- **Prompt scaffolding** (`prompt_builder.py`) — dynamic system-prompt/bootstrap generation for newly spawned agents.
-- **Radio/audio control** (`radio_controller.py`) — a small controller for a shared audio channel used by the fleet.
+---
 
-Tests included where present (`test_a2a_dev110.py`, `test_send_a2a_engine_aware.py`).
+## 🏛️ Key Architectural Pillars
 
-## What's deliberately excluded
+```
+                      +-----------------------------+
+                      |       USER / OPERATOR       |
+                      +-----------------------------+
+                                     |
+                          Interactive CLI / Chat
+                                     v
+                      +-----------------------------+
+                      |     STUDIO COORDINATOR      |
+                      |   (Dedicated Tmux Session)  |
+                      +-----------------------------+
+                               |           ^
+       strumento_agenti.py     |           |  A2A Report / Deliverable
+       crea_exec <slug> <task> |           |  send_a2a.py
+                               v           |
+                      +-----------------------------+
+                      |    DISPOSABLE EXEC AGENT    |
+                      |   (Temporary Tmux Window)   |
+                      |   - File-based Task Plan    |
+                      |   - Live Tool Execution     |
+                      +-----------------------------+
+                                     |
+                         elimina_exec <slug>
+                                     v
+                      +-----------------------------+
+                      |      CLEAN DECOMMISSION     |
+                      |   (Process Reaped, DB       |
+                      |    marked dismesso=true)    |
+                      +-----------------------------+
+```
 
-This is an excerpt, not the whole `core/` directory. Left out: anything unrelated to these subsystems (e.g. media/TV control skills, other integrations), local dev-only files (`.env`, session/browser-profile data), and a few files that depend on modules outside this excerpt's scope. Comments in the code reference internal history (dates, decisions, incident write-ups) — that's kept as-is because it's genuine engineering log, not because it's meant as external documentation.
+1. **Multi-Engine CLI Orchestration (`engine_adapter.py`)**:
+   Agents execute directly inside native CLI harnesses (`agy` / Antigravity, `claude` / Claude Code, `qwen`), inheriting interactive logins, file permissions, and environment variables. Includes cascading fallback chains (e.g., *Pro -> Flash* or *Opus -> Sonnet -> Haiku*) on 429 quota exhaustion.
 
-## Status
+2. **Deterministic A2A Messaging on Filesystem (`send_a2a.py` & DEV-110)**:
+   Inter-agent communication bypasses shared context windows. Messages are written atomically to `a2a/<recipient>/inbox/<timestamp>__<sender>__<id>.md`. Acknowledgment via `a2a_ack.py` moves files to `read/`, ensuring guaranteed delivery across restarts.
 
-Development snapshot, not a packaged/installable library. Some files assume a local Postgres instance, tmux, and the wider (private) ecosystem around them — read for architecture, not `pip install`.
+3. **5-Tier Self-Healing & Heuristic Watchdog (`self_healing.py` & `guardiano.py`)**:
+   Continuous background supervision detects stalled panes, runaway memory/CPU loops, broken Tmux sockets, and zombie processes, executing graduated non-destructive recovery actions.
+
+4. **Disposable Task-Driven Executors (`strumento_agenti.py`)**:
+   Work is performed by temporary, task-scoped *execs*. Coordinators delegate tasks to execs, which maintain structured progress files on disk (`/tmp/betty_docs/piano_<id>.md`), deliver results via A2A, and are immediately reaped to conserve memory.
+
+---
+
+## 📂 Repository Structure
+
+```
+samantha-core/
+├── .env.example                  # Environment configuration template
+├── requirements.txt              # Python runtime dependencies
+├── setup.sh                      # Automated 1-click bootstrap script
+├── quickstart.sh                 # Fleet initialization entrypoint
+├── schema_bootstrap.sql          # Minimal PostgreSQL DDL & demo records
+├── AGENTS.md                     # Universal fleet operating rules
+├── README.md                     # System documentation & custom guide
+├── core/                         # Core Python infrastructure modules
+│   ├── agent_db.py               # PostgreSQL state management & JSONB merge
+│   ├── secret_env.py             # Safe environment variable loader
+│   ├── resource_watchdog.py      # System RAM/CPU monitoring
+│   ├── sensore_memoria_leggera.py# Transcript size & context window estimator
+│   ├── secret_patterns.py        # Log sanitization & secret masking
+│   ├── engine_adapter.py         # Multi-engine CLI launcher & cascade router
+│   ├── engine_budget.py          # Token expenditure & model quota tracker
+│   ├── self_healing.py           # Primary self-healing supervisor loop
+│   ├── self_healing_core.py      # Service recovery actions & priority tiers
+│   ├── self_healing_config.py    # Monitored service registry
+│   ├── self_healing_stato.py     # Hierarchical 5-tier state evaluator
+│   ├── guardiano.py              # Heuristic watchdog (429s, stalls, leaks)
+│   ├── guardiano.conf.json       # Alert thresholds & model pools configuration
+│   ├── guardiano_inbox.py        # Inbox queue health & stale message checker
+│   ├── strumento_agenti.py       # Agent lifecycle management CLI
+│   ├── tmux_esatto.py            # Atomic Tmux window targeting & verification
+│   ├── pool_lib.py               # Distributed shared queue & task claim
+│   ├── prompt_builder.py         # System prompt constructor & rule injection
+│   ├── radio_controller.py       # Shared fleet broadcast channel
+│   ├── send_a2a.py               # A2A sender with retry & payload guards
+│   ├── a2a_ack.py                # Message acknowledgment handler
+│   ├── a2a_inbox.py              # Inbox directory manager & counters
+│   ├── a2a_bell_relay.py         # Tmux window notify & bell daemon
+│   └── relay_consegna_a2a.py     # Delivery monitor & unread alert relay
+├── studios/                      # Vertical studios & agent workspaces
+│   └── studio_demo/              # Demo studio (1 coordinator, 1 exec template)
+├── a2a/                          # Runtime agent inboxes (gitignored)
+└── logs/                         # Runtime logs & audit trails (gitignored)
+```
+
+---
+
+## ⚡ Quickstart Guide
+
+### Prerequisites
+- **Linux** (Ubuntu 22.04+ / Debian 12 recommended)
+- **`tmux`** (>= 3.2a)
+- **`postgresql`** (>= 14) + `postgresql-contrib`
+- **`python3`** (>= 3.10) + `python3-venv` + `python3-pip`
+- At least one AI CLI installed in your PATH:
+  - [Google Antigravity CLI](https://cloud.google.com/) (`agy`)
+  - [Anthropic Claude Code CLI](https://docs.anthropic.com/) (`claude`)
+
+### 1. Clone & Run Setup
+```bash
+git clone https://github.com/manfrifrac/samantha-core.git
+cd samantha-core
+
+# Run automated installer
+chmod +x setup.sh quickstart.sh
+./setup.sh
+```
+
+### 2. Configure Environment (`.env`)
+Edit your `.env` file generated during setup:
+```bash
+nano .env
+```
+Ensure your `DATABASE_URL` matches your local PostgreSQL credentials:
+```bash
+DATABASE_URL=postgresql://samantha_user:samantha_password@localhost:5432/samantha_db
+```
+
+### 3. Launch the Fleet
+```bash
+./quickstart.sh
+```
+
+Attach to the demo studio coordinator:
+```bash
+tmux attach -t studio_demo
+```
+
+---
+
+## 🛠️ Customization Guide
+
+### 1. Creating Custom Studios & Coordinators
+Studi represent vertical domains (e.g. `research_studio`, `dev_studio`, `content_studio`). Each studio has a dedicated Tmux session and coordinator agent.
+
+To add a new studio:
+1. Create a directory in `studios/`:
+   ```bash
+   mkdir -p studios/my_studio
+   ```
+2. Symlink `AGENTS.md` into your studio workspace:
+   ```bash
+   ln -s ../../AGENTS.md studios/my_studio/CLAUDE.md
+   ```
+3. Register the coordinator in PostgreSQL:
+   ```sql
+   INSERT INTO agents (agent_id, data) VALUES (
+       'my_coord',
+       jsonb_build_object(
+           'name', 'Lead Coordinator',
+           'studio', 'my_studio',
+           'role', 'Coordinator of My Studio',
+           'engine', 'agy',
+           'model', 'cascata-fast',
+           'always_on', true,
+           'tmux_window', 'my_studio:AGY-LEAD',
+           'work_dir', 'studios/my_studio',
+           'coordinatore', 'my_coord',
+           'dismesso', false
+       )
+   );
+   ```
+4. Start the coordinator:
+   ```bash
+   ./venv/bin/python3 core/strumento_agenti.py accendi_agente my_coord
+   ```
+
+### 2. Launching Disposable Task Executors (Execs)
+From within a coordinator's session (or script), spawn a targeted worker:
+```bash
+./venv/bin/python3 core/strumento_agenti.py crea_exec worker_audit "Audit codebase for unhandled exceptions"
+```
+The executor will:
+1. Initialize in window `my_studio:AGY-EXEC_WORKER_AUDIT`.
+2. Write its operational plan to `/tmp/betty_docs/piano_worker_audit.md`.
+3. Execute the assignment using available tools.
+4. Send an A2A completion report back to `my_coord`.
+
+Once the coordinator validates the deliverable, decommission the exec:
+```bash
+./venv/bin/python3 core/strumento_agenti.py elimina_exec worker_audit
+```
+
+### 3. Configuring Model Cascades
+Edit `core/guardiano.conf.json` to customize token rate limits, thresholds, and fallback cascades:
+```json
+{
+  "modelli": {
+    "cascata_pro": ["claude-3-opus", "claude-3-5-sonnet", "claude-3-5-haiku"],
+    "cascata_fast": ["gemini-2.0-flash", "deepseek-v4-flash"]
+  }
+}
+```
+
+---
+
+## 🔒 Security & Safe Operation
+
+- **Zero Hardcoded Secrets**: Samantha Core dynamically loads environment variables via `secret_env.py` and masks tokens in log output via `secret_patterns.py`.
+- **Strict Execution Perimeter**: `strumento_agenti.py` enforces coordinator boundaries—agents can only spawn and manage workers within their assigned studio.
+- **Disk-Based Truth**: Agents persist memory in Markdown files rather than inflating token context.
+
+---
+
+## 📄 License
+This project is open-source under the [MIT License](LICENSE).

@@ -526,10 +526,15 @@ def _input_box_da_testo(pane_text: str) -> str:
     penultimo, ultimo = separatori[-2], separatori[-1]
     if penultimo >= ultimo:
         return ""
+    # Se l'ultimo separatore è troppo in alto nel pannello (> 5 righe dal fondo),
+    # significa che non è la barra dell'input box in fondo ma un vecchio separatore
+    # nello scrollback mentre l'agente sta generando o senza input box.
+    if len(righe) - 1 - ultimo > 5:
+        return ""
     testo = "\n".join(righe[penultimo + 1:ultimo]).strip()
     if not testo:
         return ""
-    if testo.startswith("● "):
+    if testo.startswith("● ") or testo.startswith("✻ "):
         return ""
     # segnaposto del prompt (niente testo reale pendente): trattatelo come vuoto.
     # Marker idle dei vari motori: claude `❯ `, agy/qwen `> `, deepcode
@@ -538,33 +543,39 @@ def _input_box_da_testo(pane_text: str) -> str:
     # scartato — altrimenti il dedup non lo vedrebbe mai e ricadremmo nel bug
     # delle copie. Qui si scarta come placeholder solo se dopo il marker (o
     # dopo le parole d'idle) non resta alcun contenuto.
-    UNICA = testo if len(testo.splitlines()) == 1 else ""
-    if UNICA:
-        _p = UNICA.strip()
-        if "Type your message" in _p or "YOLO mode" in _p or "Accept-edits mode" in _p:
+    linee = [r for r in testo.splitlines() if r.strip()]
+    if not linee:
+        return ""
+    prima = linee[0].strip()
+    if any(p in prima for p in ("Type your message", "YOLO mode", "Accept-edits mode", "bypassing permissions")):
+        return ""
+    if prima.startswith("❯") or prima.startswith(">"):
+        # 22/08/2026 DISCRIMINANTE NBSP: la riga ghost/idle della casella
+        # usa SEMPRE '❯' + NBSP (U+00A0, \xc2\xa0) subito dopo il marker,
+        # anche quando il ghost mostra un testo di senso compiuto in
+        # italiano (es. "Attendere risposta da Orazio..."). Il testo VERO
+        # incollato usa '❯' + spazio normale (0x20). NBSP dopo il marker
+        # => casella VUOTA (segnaposto), niente da deduplicare.
+        #
+        # 02/09/2026 FIX MULTILINE/WRAPPING: non limitare il controllo a
+        # len(splitlines)==1 (UNICA) — un ghost prompt lungo o su finestre
+        # 80 colonne va a capo su 2 righe, e il vecchio check UNICA veniva
+        # scavalcato restituendo il ghost come testo pendente (falso positivo).
+        _dopo = prima.lstrip("❯>")
+        if _dopo.lstrip(" ").startswith("\xa0"):
             return ""
-        if _p.startswith("❯") or _p.startswith(">"):
-            # 22/08/2026 DISCRIMINANTE NBSP: la riga ghost/idle della casella
-            # usa SEMPRE '❯' + NBSP (U+00A0, \xc2\xa0) subito dopo il marker,
-            # anche quando il ghost mostra un testo di senso compiuto in
-            # italiano (es. "Attendere risposta da Orazio..."). Il testo VERO
-            # incollato usa '❯' + spazio normale (0x20). NBSP dopo il marker
-            # => casella VUOTA (segnaposto), niente da deduplicare.
-            _dopo = _p.lstrip("❯>")
-            if _dopo.startswith(" "):
-                return ""
-            resto = _dopo.strip()
-            if not resto:
-                return ""
-            # 22/08/2026 DIFETTO A: dopo il marker puo' esserci una stringa di
-            # INTERFACCIA (suggerimento a rotazione, avviso di coda, riga dei
-            # modi). La casella e' vuota: segnaposto, non testo pendente.
-            if _e_segnaposto_ui(resto):
-                return ""
-        elif _e_segnaposto_ui(_p):
-            # stesse stringhe di UI viste senza il marker del prompt (capture
-            # preso mentre il cursore non e' disegnato).
+        resto = _dopo.strip()
+        if not resto:
             return ""
+        # 22/08/2026 DIFETTO A: dopo il marker puo' esserci una stringa di
+        # INTERFACCIA (suggerimento a rotazione, avviso di coda, riga dei
+        # modi). La casella e' vuota: segnaposto, non testo pendente.
+        if _e_segnaposto_ui(resto):
+            return ""
+    elif _e_segnaposto_ui(prima):
+        # stesse stringhe di UI viste senza il marker del prompt (capture
+        # preso mentre il cursore non e' disegnato).
+        return ""
     return testo
 
 

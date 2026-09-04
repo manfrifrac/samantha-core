@@ -134,6 +134,26 @@ def get_service_registry() -> Dict[str, ServiceConfig]:
         description="Chrome Headful GUI, CDP :9224, x11vnc :15900, websockify :6080"
     )
 
+    # 31/08/2026 (mandato samantha_1, MVP multi-Chrome isolato): SECONDA istanza
+    # Chrome GUI, ADDITIVA — clone del pattern 'chrome' sopra, porte/profilo/lock
+    # indipendenti. NON sostituisce e non altera in alcun modo la voce 'chrome':
+    # gli exec esistenti continuano a puntare all'istanza 1 finche' non si decide
+    # diversamente. Vedi core/chrome_gui_service_2.py e
+    # /tmp/betty_docs/piano_fase1_multi_chrome.md per il razionale (porte fuori
+    # dal range 9225-9227 gia' riservato, non attivo, da core/chrome_gui_multi/).
+    registry["chrome2"] = ServiceConfig(
+        name="chrome2",
+        cmd="./venv/bin/python3 -u chrome_gui_service_2.py",
+        cwd=CORE_DIR,
+        runtime="python",
+        ports=[9230, 15910],
+        healthcheck_type="tcp",
+        healthcheck_target="127.0.0.1:9230",
+        tier=2,
+        restart_delay=5.0,
+        description="Chrome Headful GUI istanza 2 (isolata), CDP :9230, x11vnc :15910, websockify :6090"
+    )
+
     registry["tunnel"] = ServiceConfig(
         name="tunnel",
         cmd="./venv/bin/python3 -u chrome_tunnel_watchdog.py",
