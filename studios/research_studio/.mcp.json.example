@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "web-search": {
+      "command": "python3",
+      "args": ["../../mcp/mcp_web_search.py"]
+    },
+    "chrome-cdp": {
+      "command": "python3",
+      "args": ["../../mcp/mcp_chrome_contabo.py"]
+    },
+    "gdrive": {
+      "command": "python3",
+      "args": ["../../mcp/mcp_gdrive.py"]
+    },
+    "news": {
+      "command": "python3",
+      "args": ["../../mcp/mcp_news.py"]
+    }
+  }
+}

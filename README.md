@@ -110,6 +110,7 @@ samantha-core/
 │   ├── guardiano.conf.json       # Alert thresholds & model pools configuration
 │   ├── guardiano_inbox.py        # Inbox queue health & stale message checker
 │   ├── strumento_agenti.py       # Agent lifecycle management CLI
+│   ├── create_new_agent_or_studio.py # Dynamic agent & studio generative factory
 │   ├── tmux_esatto.py            # Atomic Tmux window targeting & verification
 │   ├── pool_lib.py               # Distributed shared queue & task claim
 │   ├── prompt_builder.py         # System prompt constructor & rule injection
@@ -159,7 +160,11 @@ samantha-core/
 │   ├── browser_automation_policy.md # Browser safety & HITL CAPTCHA handoff
 │   └── README.md                 # System governance index & core axioms
 ├── studios/                      # Vertical studios & agent workspaces
-│   └── studio_demo/              # Demo studio (1 coordinator, 1 exec template)
+│   ├── studio_demo/              # Starter demo studio template
+│   ├── research_studio/          # Deep web scraping & PA intelligence studio
+│   ├── dev_studio/               # Software engineering & daemon infra studio
+│   ├── creative_studio/          # Multimedia, 3D WebGL & audio production studio
+│   └── README.md                 # Studio architecture & workspace lifecycle guide
 ├── a2a/                          # Runtime agent inboxes (gitignored)
 └── logs/                         # Runtime logs & audit trails (gitignored)
 ```

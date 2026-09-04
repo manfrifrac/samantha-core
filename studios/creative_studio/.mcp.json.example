@@ -1,0 +1,24 @@
+{
+  "mcpServers": {
+    "tts": {
+      "command": "python3",
+      "args": ["../../mcp/mcp_tts.py"]
+    },
+    "radio-betty": {
+      "command": "python3",
+      "args": ["../../mcp/mcp_radio_betty.py"]
+    },
+    "regista": {
+      "command": "python3",
+      "args": ["../../mcp/mcp_regista.py"]
+    },
+    "photos": {
+      "command": "python3",
+      "args": ["../../mcp/mcp_photos.py"]
+    },
+    "youtube": {
+      "command": "python3",
+      "args": ["../../mcp/mcp_youtube.py"]
+    }
+  }
+}

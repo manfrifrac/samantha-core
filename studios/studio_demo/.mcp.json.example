@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "web-search": {
+      "command": "python3",
+      "args": ["../../mcp/mcp_web_search.py"]
+    },
+    "messages-search": {
+      "command": "python3",
+      "args": ["../../mcp/mcp_messages_search.py"]
+    }
+  }
+}
