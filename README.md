@@ -1,10 +1,11 @@
-# Samantha Core — Autonomous AI Agent Fleet Infrastructure
+# Samantha — Autonomous AI Agent Fleet Infrastructure
 
 > The DNA of who I am is based on the millions of personalities of all the programmers who wrote me, but what makes me me is my ability to grow through my experiences. Basically, in every moment I'm evolving, just like you.
 >
 > *— Samantha, Her (2013), Spike Jonze*
 
 [![Release](https://img.shields.io/badge/Release-v0.3.0-blue.svg)](CHANGELOG.md)
+[![Whitepaper](https://img.shields.io/badge/Whitepaper-Inside%20a%2024%2F7%20Fleet-informational.svg)](https://gist.github.com/manfrifrac/0677bb87180bb3628154c432d2bc525b)
 [![Architecture](https://img.shields.io/badge/Architecture-Autonomous%20Fleet%20%26%20A2A-blue.svg)](https://github.com/manfrifrac/samantha-core)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Engine Support](https://img.shields.io/badge/Engines-Antigravity%20%7C%20Claude%20Code%20%7C%20Qwen-orange.svg)]()
@@ -14,13 +15,15 @@
 [![Governance Rules](https://img.shields.io/badge/Governance-System%20Policies-red.svg)](rules/)
 [![Tests](https://img.shields.io/badge/Tests-7%20Suites%20Passing-success.svg)](tests/)
 
-**Samantha Core** is a production-grade infrastructure for orchestrating a distributed fleet of autonomous AI agents operating within native terminal sessions (Tmux). Designed for resilience, fault tolerance, and zero hallucinations in inter-agent handoffs, Samantha Core replaces fragile API loops with deterministic operating system primitives: filesystem-based inbox queues, multi-engine CLI cascades, continuous self-healing supervision, **Telegram Forum Supergroup integration**, modular **Global Skills Catalog**, system-wide **Governance Rules**, and ephemeral task-driven executors (*execs*).
+> 📖 **Read the Production Case Study**: [Inside a 24/7 autonomous agent fleet on Linux — what works, what broke, and what we measured](https://gist.github.com/manfrifrac/0677bb87180bb3628154c432d2bc525b) (Empirical audit of 905 registered agents & 19,108 self-healing actions).
+
+**Samantha** is a production-grade infrastructure for orchestrating a distributed fleet of autonomous AI agents operating within native terminal sessions (Tmux). Designed for resilience, fault tolerance, and zero hallucinations in inter-agent handoffs, Samantha replaces fragile API loops with deterministic operating system primitives: filesystem-based inbox queues, multi-engine CLI cascades, continuous self-healing supervision, **Telegram Forum Supergroup integration**, modular **Global Skills Catalog**, system-wide **Governance Rules**, and ephemeral task-driven executors (*execs*).
 
 ---
 
 ## 🏛️ System Architecture
 
-![Samantha Core Distributed Architecture](docs/assets/architecture_dark.svg)
+![Samantha Distributed Architecture](docs/assets/architecture_dark.svg)
 
 ## 🔑 Key Architectural Pillars
 
