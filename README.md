@@ -16,7 +16,11 @@
 
 ---
 
-## 🏛️ Key Architectural Pillars
+## 🏛️ System Architecture
+
+![Samantha Core Distributed Architecture](docs/assets/architecture_dark.svg)
+
+## 🔑 Key Architectural Pillars
 
 ```
                       +-----------------------------+
