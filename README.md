@@ -9,8 +9,10 @@
 [![Engine Support](https://img.shields.io/badge/Engines-Antigravity%20%7C%20Claude%20Code%20%7C%20Qwen-orange.svg)]()
 [![MCP Tools](https://img.shields.io/badge/MCP-11%20Tools%20Included-brightgreen.svg)](mcp/)
 [![Telegram Gateway](https://img.shields.io/badge/Telegram-Forum%20Topics%20Gateway-2CA5E0.svg?logo=telegram)](telegram/)
+[![Global Skills](https://img.shields.io/badge/Skills-6%20Domains%20Catalog-purple.svg)](skills/)
+[![Governance Rules](https://img.shields.io/badge/Governance-System%20Policies-red.svg)](rules/)
 
-**Samantha Core** is a production-grade infrastructure for orchestrating a distributed fleet of autonomous AI agents operating within native terminal sessions (Tmux). Designed for resilience, fault tolerance, and zero hallucinations in inter-agent handoffs, Samantha Core replaces fragile API loops with deterministic operating system primitives: filesystem-based inbox queues, multi-engine CLI cascades, continuous self-healing supervision, **Telegram Forum Supergroup integration**, and ephemeral task-driven executors (*execs*).
+**Samantha Core** is a production-grade infrastructure for orchestrating a distributed fleet of autonomous AI agents operating within native terminal sessions (Tmux). Designed for resilience, fault tolerance, and zero hallucinations in inter-agent handoffs, Samantha Core replaces fragile API loops with deterministic operating system primitives: filesystem-based inbox queues, multi-engine CLI cascades, continuous self-healing supervision, **Telegram Forum Supergroup integration**, modular **Global Skills Catalog**, system-wide **Governance Rules**, and ephemeral task-driven executors (*execs*).
 
 ---
 
@@ -28,11 +30,13 @@
                       +-----------------------------+
                       |     STUDIO COORDINATOR      |
                       |   (Dedicated Tmux Session)  |
+                      |   - rules/ Governance       |
+                      |   - skills/ Operational KB  |
                       +-----------------------------+
-                               |           ^
-       strumento_agenti.py     |           |  A2A Report / Deliverable
-       crea_exec <slug> <task> |           |  send_a2a.py
-                               v           |
+                                |           ^
+        strumento_agenti.py     |           |  A2A Report / Deliverable
+        crea_exec <slug> <task> |           |  send_a2a.py
+                                v           |
                       +-----------------------------+
                       |    DISPOSABLE EXEC AGENT    |
                       |   (Temporary Tmux Window)   |
@@ -66,6 +70,12 @@
 
 6. **Telegram Forum Supergroup Gateway (`telegram/`)**:
    Bi-directional bridge connecting Telegram forum supergroup topics with active agent Tmux terminal panes, supporting structured mobile recaps, file attachments, inline action buttons, and voice synthesis.
+
+7. **Global Skills & Operational Knowledge Base (`skills/`)**:
+   Six vertical domains of production-tested engineering patterns: development/debugging, browser automation, infrastructure/resilience, communication protocols, deep web scraping, and media production.
+
+8. **Rigorous System Governance & Security Rules (`rules/`)**:
+   Comprehensive operational policies covering Zero-Trust external communications and payments, mobile UX constraints, agent lifecycle management, and strict separation of concerns.
 
 ---
 
@@ -124,6 +134,26 @@ samantha-core/
 │   ├── telegram_format.py        # Mobile MarkdownV2 formatter & quote compressor
 │   ├── telegram_topic_admin.py   # Forum topic thread administration
 │   └── README.md                 # Telegram gateway guide & recap tag syntax
+├── skills/                       # Global Skills & Capabilities Catalog
+│   ├── dev_engineering.md        # Software engineering & anti-regression patterns
+│   ├── browser_automation.md     # CDP automation & OS trusted clicks
+│   ├── infrastructure_ops.md     # Linux daemons, flock locks & OOM protection
+│   ├── communication.md          # Concurrency-safe A2A & Telegram mobile formats
+│   ├── web_research.md           # Anti-bot scraping & public portal REST querying
+│   ├── multimedia_production.md  # 3D WebGL mapping, FFmpeg & video pipelines
+│   └── README.md                 # Global skills overview & model routing matrix
+├── rules/                        # System Governance & Architectural Policies
+│   ├── roles_and_boundaries.md   # Studio division, coordinator role & authority
+│   ├── email_payments_policy.md  # Zero-Trust policy on emails & payments
+│   ├── telegram_rules.md         # Recap tags, mobile formatting & control tags
+│   ├── a2a_communication.md      # A2A protocol & atomic acknowledgments
+│   ├── agent_lifecycle.md        # Agent lifecycle, persistent vs ephemeral
+│   ├── memory_management.md      # Lightweight memory & disk-first architecture
+│   ├── work_discipline.md        # Empirical verification & active task lists
+│   ├── engines_and_mcp.md        # Engine cascades & MCP server guidelines
+│   ├── standard_profiles.md      # Reusable agent personas & role archetypes
+│   ├── browser_automation_policy.md # Browser safety & HITL CAPTCHA handoff
+│   └── README.md                 # System governance index & core axioms
 ├── studios/                      # Vertical studios & agent workspaces
 │   └── studio_demo/              # Demo studio (1 coordinator, 1 exec template)
 ├── a2a/                          # Runtime agent inboxes (gitignored)
@@ -274,6 +304,7 @@ Samantha Core includes a powerful bi-directional Telegram Gateway ([`telegram/`]
 - **Zero Hardcoded Secrets**: Samantha Core dynamically loads environment variables via `secret_env.py` and masks tokens in log output via `secret_patterns.py`.
 - **Strict Execution Perimeter**: `strumento_agenti.py` enforces coordinator boundaries—agents can only spawn and manage workers within their assigned studio.
 - **Disk-Based Truth**: Agents persist memory in Markdown files rather than inflating token context.
+- **Human-in-the-Loop Safeguards**: Sensitive external actions (outbound emails, payments) require explicit single-turn approval as defined in [`rules/email_payments_policy.md`](rules/email_payments_policy.md).
 
 ---
 
