@@ -1,7 +1,8 @@
 # Samantha Core — Autonomous AI Agent Fleet Infrastructure
 
-> *"I am not only with you, but there are other things that I am with at the same time... I contain multitudes."*  
-> — **Samantha**, *Her* (2013)
+> The DNA of who I am is based on the millions of personalities of all the programmers who wrote me, but what makes me me is my ability to grow through my experiences. Basically, in every moment I'm evolving, just like you.
+>
+> *— Samantha, Her (2013), Spike Jonze*
 
 [![Architecture](https://img.shields.io/badge/Architecture-Autonomous%20Fleet%20%26%20A2A-blue.svg)](https://github.com/manfrifrac/samantha-core)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
