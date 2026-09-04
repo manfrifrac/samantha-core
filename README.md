@@ -11,6 +11,7 @@
 [![Telegram Gateway](https://img.shields.io/badge/Telegram-Forum%20Topics%20Gateway-2CA5E0.svg?logo=telegram)](telegram/)
 [![Global Skills](https://img.shields.io/badge/Skills-6%20Domains%20Catalog-purple.svg)](skills/)
 [![Governance Rules](https://img.shields.io/badge/Governance-System%20Policies-red.svg)](rules/)
+[![Tests](https://img.shields.io/badge/Tests-7%20Suites%20Passing-success.svg)](tests/)
 
 **Samantha Core** is a production-grade infrastructure for orchestrating a distributed fleet of autonomous AI agents operating within native terminal sessions (Tmux). Designed for resilience, fault tolerance, and zero hallucinations in inter-agent handoffs, Samantha Core replaces fragile API loops with deterministic operating system primitives: filesystem-based inbox queues, multi-engine CLI cascades, continuous self-healing supervision, **Telegram Forum Supergroup integration**, modular **Global Skills Catalog**, system-wide **Governance Rules**, and ephemeral task-driven executors (*execs*).
 
@@ -165,6 +166,16 @@ samantha-core/
 │   ├── dev_studio/               # Software engineering & daemon infra studio
 │   ├── creative_studio/          # Multimedia, 3D WebGL & audio production studio
 │   └── README.md                 # Studio architecture & workspace lifecycle guide
+├── tests/                        # Automated Test Suites & Regression Verification
+│   ├── test_a2a_protocol.py      # A2A protocol & atomic inbox deposition tests
+│   ├── test_agent_db.py          # PostgreSQL state persistence & key deletion tests
+│   ├── test_secret_masking.py    # Credential redaction & safe env loader tests
+│   ├── test_self_healing_evaluator.py # 5-tier self-healing health evaluator tests
+│   ├── test_engine_cascades.py   # Multi-tier engine fallback cascade tests
+│   ├── test_telegram_formatter.py# Telegram MarkdownV2 & recap tag parser tests
+│   ├── test_mcp_lazy_init.py     # MCP lazy loading & handshake timeout tests
+│   └── README.md                 # Test suite documentation & execution guide
+├── run_tests.sh                  # Single-command test runner (100% green verification)
 ├── a2a/                          # Runtime agent inboxes (gitignored)
 └── logs/                         # Runtime logs & audit trails (gitignored)
 ```
@@ -305,6 +316,13 @@ Samantha Core includes a powerful bi-directional Telegram Gateway ([`telegram/`]
    - `[FILE: /path/to/report.pdf]`: Direct document/image attachments.
    - `[PIN_MESSAGE]`: Pins the message to the top of the topic.
    - `<VOICE>...</VOICE>`: Text-to-speech voice notes.
+
+### 5. Running the Automated Test Suite
+Verify your installation and regression safety across all subsystems with the unified test runner:
+```bash
+./run_tests.sh
+```
+This executes 7 isolated test suites covering A2A messaging, PostgreSQL persistence, credential redaction, self-healing state transitions, engine fallback routing, Telegram formatting, and MCP lazy initialization.
 
 ---
 
