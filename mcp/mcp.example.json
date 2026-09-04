@@ -1,0 +1,44 @@
+{
+  "mcpServers": {
+    "chrome-browser": {
+      "command": "python3",
+      "args": ["core/../mcp/mcp_chrome_contabo.py"],
+      "env": {
+        "CDP_HOST": "127.0.0.1",
+        "CDP_PORT": "9224"
+      }
+    },
+    "web-search": {
+      "command": "python3",
+      "args": ["core/../mcp/mcp_web_search.py"],
+      "env": {
+        "SEARCH_PROVIDER": "duckduckgo"
+      }
+    },
+    "messages-search": {
+      "command": "python3",
+      "args": ["core/../mcp/mcp_messages_search.py"],
+      "env": {
+        "MESSAGES_DB_PATH": "/path/to/messages.db"
+      }
+    },
+    "gdrive": {
+      "command": "python3",
+      "args": ["core/../mcp/mcp_gdrive.py"],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "/path/to/credentials.json"
+      }
+    },
+    "arturo-knowledge": {
+      "command": "python3",
+      "args": ["core/../mcp/mcp_arturo.py"],
+      "env": {
+        "VAULT_PATH": "/path/to/Obsidian-Vault"
+      }
+    },
+    "media-director": {
+      "command": "python3",
+      "args": ["core/../mcp/mcp_regista.py"]
+    }
+  }
+}

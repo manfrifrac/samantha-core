@@ -6,6 +6,7 @@
 [![Architecture](https://img.shields.io/badge/Architecture-Autonomous%20Fleet%20%26%20A2A-blue.svg)](https://github.com/manfrifrac/samantha-core)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Engine Support](https://img.shields.io/badge/Engines-Antigravity%20%7C%20Claude%20Code%20%7C%20Qwen-orange.svg)]()
+[![MCP Tools](https://img.shields.io/badge/MCP-11%20Tools%20Included-brightgreen.svg)](mcp/)
 
 **Samantha Core** is a production-grade infrastructure for orchestrating a distributed fleet of autonomous AI agents operating within native terminal sessions (Tmux). Designed for resilience, fault tolerance, and zero hallucinations in inter-agent handoffs, Samantha Core replaces fragile API loops with deterministic operating system primitives: filesystem-based inbox queues, multi-engine CLI cascades, continuous self-healing supervision, and ephemeral task-driven executors (*execs*).
 
@@ -32,7 +33,7 @@
                       |    DISPOSABLE EXEC AGENT    |
                       |   (Temporary Tmux Window)   |
                       |   - File-based Task Plan    |
-                      |   - Live Tool Execution     |
+                      |   - Tool Execution (MCP)    |
                       +-----------------------------+
                                      |
                          elimina_exec <slug>
@@ -55,6 +56,9 @@
 
 4. **Disposable Task-Driven Executors (`strumento_agenti.py`)**:
    Work is performed by temporary, task-scoped *execs*. Coordinators delegate tasks to execs, which maintain structured progress files on disk (`/tmp/betty_docs/piano_<id>.md`), deliver results via A2A, and are immediately reaped to conserve memory.
+
+5. **Integrated Model Context Protocol (MCP) Tooling (`mcp/`)**:
+   Out-of-the-box support for Chrome CDP browser automation, real-time web search, communication history queries, Google Drive synchronization, Obsidian vector database search, and multi-track media synthesis.
 
 ---
 
@@ -94,6 +98,20 @@ samantha-core/
 │   ├── a2a_inbox.py              # Inbox directory manager & counters
 │   ├── a2a_bell_relay.py         # Tmux window notify & bell daemon
 │   └── relay_consegna_a2a.py     # Delivery monitor & unread alert relay
+├── mcp/                          # Model Context Protocol (MCP) servers
+│   ├── mcp_chrome_contabo.py     # Chrome CDP browser automation
+│   ├── mcp_web_search.py         # Multi-provider real-time web search
+│   ├── mcp_messages_search.py    # Indexed conversation & communication search
+│   ├── mcp_gdrive.py             # Google Drive document management
+│   ├── mcp_arturo.py             # Semantic vector search & Obsidian knowledge
+│   ├── mcp_regista.py            # Audio ducking & timeline director
+│   ├── mcp_radio_betty.py        # Music playback & visual trigger control
+│   ├── mcp_news.py               # Live RSS news aggregator
+│   ├── mcp_photos.py             # Visual media library indexer
+│   ├── mcp_tts.py                # Multi-engine speech synthesis
+│   ├── mcp_youtube.py            # Video transcript search
+│   ├── mcp.example.json          # MCP configuration template
+│   └── README.md                 # MCP configuration and tool guide
 ├── studios/                      # Vertical studios & agent workspaces
 │   └── studio_demo/              # Demo studio (1 coordinator, 1 exec template)
 ├── a2a/                          # Runtime agent inboxes (gitignored)
@@ -198,13 +216,15 @@ Once the coordinator validates the deliverable, decommission the exec:
 ./venv/bin/python3 core/strumento_agenti.py elimina_exec worker_audit
 ```
 
-### 3. Configuring Model Cascades
-Edit `core/guardiano.conf.json` to customize token rate limits, thresholds, and fallback cascades:
+### 3. Configuring MCP Tools
+Enable MCP servers in your workspace `.mcp.json` (see [`mcp/README.md`](mcp/README.md)):
 ```json
 {
-  "modelli": {
-    "cascata_pro": ["claude-3-opus", "claude-3-5-sonnet", "claude-3-5-haiku"],
-    "cascata_fast": ["gemini-2.0-flash", "deepseek-v4-flash"]
+  "mcpServers": {
+    "web-search": {
+      "command": "python3",
+      "args": ["mcp/mcp_web_search.py"]
+    }
   }
 }
 ```

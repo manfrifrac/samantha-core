@@ -1,46 +1,48 @@
-# Regole di Sistema — Samantha Core
+# Operating Rules & System Protocols — Samantha Core
 
-Questo file definisce le regole operative e i protocolli non negoziabili dell'ecosistema Samantha Core.
+This document defines the immutable operating principles, inter-agent protocols, and execution discipline governing the Samantha Core agent fleet.
 
 ---
 
-## 🚨 1. REGOLA ZERO — Consegna e Comunicazione Inter-Agente (A2A)
-- Gli agenti comunicano tra loro ESCLUSIVAMENTE tramite lo script A2A:
+## 🚨 1. RULE ZERO — Guaranteed Delivery & A2A Communication
+- **Exclusive Channel**: Agents communicate with one another **EXCLUSIVELY** via the Agent-to-Agent (A2A) delivery script:
   ```bash
-  ./venv/bin/python3 core/send_a2a.py "<destinatario>" "<messaggio>"
+  ./venv/bin/python3 core/send_a2a.py "<target_session:window>" "<message>"
   ```
-- 🚫 **Divieto Assoluto Dialog Interattivi**: È severamente vietato l'uso di dialog CLI interattivi (`AskUserQuestion` / prompt modali). Bloccano l'agente a tempo indeterminato in assenza di operatore umano interattivo.
-- Le richieste ad altri agenti si inoltrano via A2A; le decisioni operative autonome si motivano e documentano nel report di consegna.
-- Ogni messaggio ricevuto in `a2a/<tuo_slug>/inbox/` deve essere confermato con:
+- 🚫 **Strict Prohibition on Interactive CLI Dialogs**: Agents MUST NEVER invoke interactive CLI prompts (e.g. `AskUserQuestion`, blocking modal prompts). In unattended daemon/background environments, interactive dialogs halt execution indefinitely.
+- **Inquiries & Delegations**: Inter-agent requests must be sent via A2A; autonomous execution decisions must be motivated and documented in the final deliverable.
+- **Delivery Acknowledgment**: Upon reading a new message from `a2a/<slug>/inbox/`, agents must immediately confirm receipt:
   ```bash
-  ./venv/bin/python3 core/a2a_ack.py <id_messaggio>
+  ./venv/bin/python3 core/a2a_ack.py <message_id>
   ```
 
 ---
 
-## 🚨 2. REGOLA ZERO-BIS — Integrità e Sicurezza
-- **Modifiche Additive**: Mai eseguire cancellazioni distruttive su codice o database.
-- **Backup Preventivo**: Prima di modificare file critici o configurazioni, crea sempre una copia di backup.
-- **Segreti & Token**: Nessuna chiave API, password o credenziale deve mai essere scritta in chiaro nel codice o nei log. Utilizza sempre le variabili d'ambiente via `.env`.
+## 🚨 2. RULE ZERO-BIS — Safety, Integrity & Secrets
+- **Additive Changes Only**: Destructive file deletions or uncoordinated database drops are strictly prohibited. Always create backup copies prior to modifying critical files.
+- **Zero Hardcoded Secrets**: API keys, OAuth tokens, and database credentials must NEVER be written in plaintext within code, logs, or commit messages. All sensitive values must be injected dynamically via `.env`.
 
 ---
 
-## 👥 3. Divisione dei Ruoli & Disciplina Operativa
-- **Coordinatori di Studio**: Gestiscono gli obiettivi, pianificano le attività, coordinano gli esecutori operativi e rispondono all'utente. Non scrivono codice direttamente.
-- **Esecutori Usa-e-Getta (Exec)**:
-  - Vengono creati dal proprio coordinatore per un compito specifico:
+## 👥 3. Division of Roles & Execution Boundaries
+- **Studio Coordinators**:
+  - Reside in dedicated, persistent Tmux sessions (`always_on=true`).
+  - Receive user objectives, formulate execution plans, spawn disposable worker agents (*execs*), and interface with the operator.
+  - **Coordinators do not write operational code directly**—they delegate tasks to execs.
+- **Disposable Task Executors (Execs)**:
+  - Created dynamically by coordinators for targeted assignments via:
     ```bash
-    ./venv/bin/python3 core/strumento_agenti.py crea_exec <slug> "<task>" "<mandato>"
+    ./venv/bin/python3 core/strumento_agenti.py crea_exec <slug> "<task_title>" "<mandate>"
     ```
-  - Prima di agire redigono il piano operativo su file: `/tmp/betty_docs/piano_<slug>.md`.
-  - A lavoro completato inviano il report A2A al coordinatore.
-  - Vengono spenti e dismessi dal coordinatore non appena consegnato:
+  - Before initiating action, execs must write their structured operational plan to disk: `/tmp/betty_docs/piano_<slug>.md`.
+  - Upon task completion, execs send an A2A report to their parent coordinator and declare readiness for decommissioning.
+  - Coordinators cleanly terminate and reap execs immediately after deliverable verification:
     ```bash
     ./venv/bin/python3 core/strumento_agenti.py elimina_exec <slug>
     ```
 
 ---
 
-## 🧠 4. Memoria Leggera su Disco
-- La memoria di lavoro vive nei file fisici di stato su disco (Markdown), non nel contesto volatile della conversazione CLI.
-- Verifica sempre il risultato concreto delle azioni (output comandi, file generati, codice di ritorno), mai la sola intenzione.
+## 🧠 4. Lightweight Memory on Disk
+- Working memory and context live in structured Markdown files on disk, not within bloated, volatile LLM conversation context windows.
+- Always verify the concrete result of operations (exit codes, generated files, HTTP 200 responses) rather than assuming success.
