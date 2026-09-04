@@ -61,6 +61,9 @@
 5. **Integrated Model Context Protocol (MCP) Tooling (`mcp/`)**:
    Out-of-the-box support for Chrome CDP browser automation, real-time web search, communication history queries, Google Drive synchronization, Obsidian vector database search, and multi-track media synthesis.
 
+6. **Telegram Forum Supergroup Gateway (`telegram/`)**:
+   Bi-directional bridge connecting Telegram forum supergroup topics with active agent Tmux terminal panes, supporting structured mobile recaps, file attachments, inline action buttons, and voice synthesis.
+
 ---
 
 ## 📂 Repository Structure
@@ -113,6 +116,11 @@ samantha-core/
 │   ├── mcp_youtube.py            # Video transcript search
 │   ├── mcp.example.json          # MCP configuration template
 │   └── README.md                 # MCP configuration and tool guide
+├── telegram/                     # Telegram Forum Topics Gateway
+│   ├── unified_telegram_engine.py# Bidirectional Telegram-to-Tmux polling engine
+│   ├── telegram_format.py        # Mobile MarkdownV2 formatter & quote compressor
+│   ├── telegram_topic_admin.py   # Forum topic thread administration
+│   └── README.md                 # Telegram gateway guide & recap tag syntax
 ├── studios/                      # Vertical studios & agent workspaces
 │   └── studio_demo/              # Demo studio (1 coordinator, 1 exec template)
 ├── a2a/                          # Runtime agent inboxes (gitignored)
