@@ -29,7 +29,7 @@ The recap file must contain plain text formatted with specialized protocol tags:
 | **File Attachment** | `[FILE: /absolute/path/report.pdf]` | Automatically attaches and uploads the specified file to Telegram. Writing files to disk without this tag leaves them inaccessible on the server. |
 | **Interactive Buttons** | `[QUESTION_OPTIONS: Option A \| Option B]` | Renders native Telegram inline keyboard buttons (2–4 short choices). **This is the only permitted method to solicit user decisions.** Native CLI modals (`AskUserQuestion`) are forbidden. |
 | **Message Pinning** | `[PIN_MESSAGE]` | Pins the message to the top of the topic thread (used for persistent coordinator status dashboards). |
-| **Reply Threading** | `[REPLY_TO_MSG_ID: 19271]` | Threads the reply directly under a specific Telegram message ID. |
+| **Reply Threading** | `[REPLY_TO_MSG_ID: <target_msg_id>]` | Threads the reply directly under a specific Telegram message ID. |
 | **Voice Synthesis** | `<VOICE>Text to synthesize</VOICE>` | Synthesizes an audio voice note. **Forbidden by default** unless explicitly requested by the human supervisor. |
 
 ---

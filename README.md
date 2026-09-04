@@ -299,13 +299,13 @@ Samantha Core includes a powerful bi-directional Telegram Gateway ([`telegram/`]
 2. **Setup a Supergroup**: Create a Telegram Supergroup, enable **Topics** (Forum mode), add your bot as an administrator, and retrieve the `TELEGRAM_CHAT_ID`.
 3. **Configure `.env`**:
    ```bash
-   TELEGRAM_BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrSTUvwxYZ
-   TELEGRAM_CHAT_ID=-1001234567890
-   TELEGRAM_ADMIN_ID=987654321
+   TELEGRAM_BOT_TOKEN=your_bot_token_from_botfather
+   TELEGRAM_CHAT_ID=-100xxxxxxxxxx
+   TELEGRAM_ADMIN_ID=your_telegram_user_id
    ```
 4. **Link Agent Thread IDs**: In PostgreSQL, assign each agent's `thread_id` to its corresponding topic:
    ```sql
-   UPDATE agents SET data = data || jsonb_build_object('thread_id', 19271) WHERE agent_id = 'my_coord';
+   UPDATE agents SET data = data || jsonb_build_object('thread_id', 1001) WHERE agent_id = 'my_coord';
    ```
 5. **Start the Telegram Gateway**:
    ```bash

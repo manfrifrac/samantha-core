@@ -14,7 +14,7 @@ class TestTelegramFormatter(unittest.TestCase):
     def test_extract_recap_tags(self):
         """Verify extraction of [FILE:], [QUESTION_OPTIONS:], [PIN_MESSAGE] control tags."""
         raw_recap = (
-            "[REPLY_TO_MSG_ID: 19271]\n"
+            "[REPLY_TO_MSG_ID: 1001]\n"
             "[PIN_MESSAGE]\n"
             "Task execution completed successfully.\n"
             "[FILE: /tmp/docs/report.pdf]\n"

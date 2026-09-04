@@ -58,9 +58,9 @@ The **Telegram Forum Gateway** (`unified_telegram_engine.py`) provides an autono
 ### 1. Environment Variables (`.env`)
 Add your bot credentials and chat configuration:
 ```bash
-TELEGRAM_BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrSTUvwxYZ
-TELEGRAM_CHAT_ID=-1001234567890
-TELEGRAM_ADMIN_ID=987654321
+TELEGRAM_BOT_TOKEN=your_bot_token_from_botfather
+TELEGRAM_CHAT_ID=-100xxxxxxxxxx
+TELEGRAM_ADMIN_ID=your_telegram_user_id
 ```
 
 ### 2. Launching the Telegram Gateway
