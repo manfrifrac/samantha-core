@@ -160,6 +160,10 @@ samantha-core/
 │   ├── engines_and_mcp.md        # Engine cascades & MCP server guidelines
 │   ├── standard_profiles.md      # Reusable agent personas & role archetypes
 │   ├── browser_automation_policy.md # Browser safety & HITL CAPTCHA handoff
+│   ├── engine_migration_checklist.md # Safe cross-engine migration protocol
+│   ├── prompt_engineering_guide.md # 8 Golden Rules for inter-agent mandates
+│   ├── data_and_integrations.md  # PostgreSQL state vs Markdown vault architecture
+│   ├── external_sources_policy.md# Multi-source fact verification standards
 │   └── README.md                 # System governance index & core axioms
 ├── studios/                      # Vertical studios & agent workspaces
 │   ├── studio_demo/              # Starter demo studio template

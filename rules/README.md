@@ -33,3 +33,7 @@ The Samantha Autonomous Ecosystem operates under strict multi-tiered governance 
 | [`engines_and_mcp.md`](./engines_and_mcp.md) | **Engines, CLI & MCP Standards** | Native CLI transparency, multi-tier model cascading, lazy MCP server initialization. |
 | [`standard_profiles.md`](./standard_profiles.md) | **Standard Agent Profiles** | Persona archetypes (Coordinator, Researcher, Developer, Dispatcher), permission groups, and tool bindings. |
 | [`browser_automation_policy.md`](./browser_automation_policy.md) | **Browser Automation Policy** | Headless server isolation (`:9224`), Human-in-the-Loop CAPTCHA handoff, session tab garbage collection. |
+| [`engine_migration_checklist.md`](./engine_migration_checklist.md) | **Engine Migration Checklist** | Safe cross-engine migration protocol preventing silent state loss or tool disconnection. |
+| [`prompt_engineering_guide.md`](./prompt_engineering_guide.md) | **Delegation Prompt Engineering** | 8 Golden Rules for unambiguous inter-agent task briefs and system prompts. |
+| [`data_and_integrations.md`](./data_and_integrations.md) | **Data & Storage Architecture** | PostgreSQL transactional state vs Markdown knowledge vault, JSONB merge safety, HTTPS ingress. |
+| [`external_sources_policy.md`](./external_sources_policy.md) | **External Sources & Fact Checking** | Multi-source verification, canonical link checks, anti-hallucination standards. |
