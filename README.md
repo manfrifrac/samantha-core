@@ -8,8 +8,9 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Engine Support](https://img.shields.io/badge/Engines-Antigravity%20%7C%20Claude%20Code%20%7C%20Qwen-orange.svg)]()
 [![MCP Tools](https://img.shields.io/badge/MCP-11%20Tools%20Included-brightgreen.svg)](mcp/)
+[![Telegram Gateway](https://img.shields.io/badge/Telegram-Forum%20Topics%20Gateway-2CA5E0.svg?logo=telegram)](telegram/)
 
-**Samantha Core** is a production-grade infrastructure for orchestrating a distributed fleet of autonomous AI agents operating within native terminal sessions (Tmux). Designed for resilience, fault tolerance, and zero hallucinations in inter-agent handoffs, Samantha Core replaces fragile API loops with deterministic operating system primitives: filesystem-based inbox queues, multi-engine CLI cascades, continuous self-healing supervision, and ephemeral task-driven executors (*execs*).
+**Samantha Core** is a production-grade infrastructure for orchestrating a distributed fleet of autonomous AI agents operating within native terminal sessions (Tmux). Designed for resilience, fault tolerance, and zero hallucinations in inter-agent handoffs, Samantha Core replaces fragile API loops with deterministic operating system primitives: filesystem-based inbox queues, multi-engine CLI cascades, continuous self-healing supervision, **Telegram Forum Supergroup integration**, and ephemeral task-driven executors (*execs*).
 
 ---
 
@@ -18,9 +19,11 @@
 ```
                       +-----------------------------+
                       |       USER / OPERATOR       |
+                      |  - Terminal CLI (Tmux)      |
+                      |  - Telegram Forum Supergroup|
                       +-----------------------------+
                                      |
-                          Interactive CLI / Chat
+                          CLI / Telegram Gateway
                                      v
                       +-----------------------------+
                       |     STUDIO COORDINATOR      |
