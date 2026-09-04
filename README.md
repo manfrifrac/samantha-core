@@ -238,6 +238,32 @@ Enable MCP servers in your workspace `.mcp.json` (see [`mcp/README.md`](mcp/READ
 }
 ```
 
+### 4. Connecting Telegram Supergroup Forum Topics
+Samantha Core includes a powerful bi-directional Telegram Gateway ([`telegram/`](telegram/)) that maps individual agents to dedicated Forum Topics within a single Telegram Supergroup.
+
+1. **Create your Bot**: Message `@BotFather` on Telegram to generate your `TELEGRAM_BOT_TOKEN`.
+2. **Setup a Supergroup**: Create a Telegram Supergroup, enable **Topics** (Forum mode), add your bot as an administrator, and retrieve the `TELEGRAM_CHAT_ID`.
+3. **Configure `.env`**:
+   ```bash
+   TELEGRAM_BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrSTUvwxYZ
+   TELEGRAM_CHAT_ID=-1001234567890
+   TELEGRAM_ADMIN_ID=987654321
+   ```
+4. **Link Agent Thread IDs**: In PostgreSQL, assign each agent's `thread_id` to its corresponding topic:
+   ```sql
+   UPDATE agents SET data = data || jsonb_build_object('thread_id', 19271) WHERE agent_id = 'my_coord';
+   ```
+5. **Start the Telegram Gateway**:
+   ```bash
+   ./venv/bin/python3 telegram/unified_telegram_engine.py
+   ```
+6. **Interaction & Recap Tags**:
+   Agents drop message summaries in `/tmp/betty_recaps/<slug>.txt` which the gateway formats in MarkdownV2 and pushes to mobile Telegram with support for:
+   - `[QUESTION_OPTIONS: Option A | Option B]`: Inline keyboard buttons for interactive decisions.
+   - `[FILE: /path/to/report.pdf]`: Direct document/image attachments.
+   - `[PIN_MESSAGE]`: Pins the message to the top of the topic.
+   - `<VOICE>...</VOICE>`: Text-to-speech voice notes.
+
 ---
 
 ## 🔒 Security & Safe Operation
