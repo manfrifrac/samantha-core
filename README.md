@@ -4,6 +4,7 @@
 >
 > *— Samantha, Her (2013), Spike Jonze*
 
+[![Release](https://img.shields.io/badge/Release-v0.3.0-blue.svg)](CHANGELOG.md)
 [![Architecture](https://img.shields.io/badge/Architecture-Autonomous%20Fleet%20%26%20A2A-blue.svg)](https://github.com/manfrifrac/samantha-core)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Engine Support](https://img.shields.io/badge/Engines-Antigravity%20%7C%20Claude%20Code%20%7C%20Qwen-orange.svg)]()
